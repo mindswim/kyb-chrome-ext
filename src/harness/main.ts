@@ -1,6 +1,7 @@
 import './browser.css';
 import './site.css';
 import { h } from '../lib/dom';
+import { fadeScrollbars } from '../lib/scroll-fade';
 import { icon } from './icons';
 import { renderSite, SITES, type SiteSpec } from './sites';
 
@@ -249,6 +250,7 @@ function boot(): void {
   const browser = document.getElementById('browser')!;
   browser.classList.add('panel-open');
   browser.append(tabstrip, toolbar(), bookmarksBar(), h('div', 'browser-body', [siteRegion, dock]));
+  fadeScrollbars(siteRegion);
   render();
 }
 

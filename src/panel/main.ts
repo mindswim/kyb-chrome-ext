@@ -10,6 +10,7 @@ import {
 import { summarize } from '../core/summarize';
 import type { BusinessProfile, ProfileRow, SectionId } from '../core/types';
 import { h } from '../lib/dom';
+import { fadeScrollbars } from '../lib/scroll-fade';
 import harbor from '../fixtures/harbor.json';
 import middeskApi from '../fixtures/middesk-api.json';
 import nimbus from '../fixtures/nimbus.json';
@@ -356,6 +357,7 @@ function boot(): void {
   };
 
   app.append(column);
+  fadeScrollbars(document.documentElement, window);
   showIdle();
 }
 

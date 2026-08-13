@@ -18,10 +18,10 @@ body {
   color: #202124;
 }
 
-/* Minimal scrollbars — overlay-thin, like Chrome's own. */
+/* Minimal scrollbars, visible only while scrolling (see lib/scroll-fade.ts). */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(60, 64, 67, 0.28) transparent;
+  scrollbar-color: transparent transparent;
 }
 ::-webkit-scrollbar {
   width: 8px;
@@ -31,11 +31,15 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(60, 64, 67, 0.28);
+  background: transparent;
   border-radius: 4px;
 }
+.is-scrolling {
+  scrollbar-color: rgba(60, 64, 67, 0.3) transparent;
+}
+.is-scrolling::-webkit-scrollbar-thumb,
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(60, 64, 67, 0.45);
+  background: rgba(60, 64, 67, 0.3);
 }
 
 #browser {
