@@ -366,6 +366,23 @@ a:focus-visible {
   color: var(--midnight-80);
   font-size: 12.5px;
 }
+.entity .about {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--midnight-80);
+  line-height: 1.5;
+}
+.entity-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 8px;
+}
+.idfrom {
+  font: 11px var(--mono);
+  color: var(--slate);
+}
 .entity .change {
   font-size: 11.5px;
   color: var(--midnight-80);
@@ -374,6 +391,13 @@ a:focus-visible {
   background: none;
   border: 0;
   padding: 0;
+}
+
+.summary p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--midnight-80);
 }
 
 /* ---------- rows ---------- */

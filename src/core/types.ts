@@ -31,7 +31,11 @@ export interface ProfileRow {
 export interface EntityCandidate {
   name: string;
   origin: 'jsonld' | 'footer' | 'tos' | 'title' | 'manual';
-  /** 0–1. Displayed, never auto-asserted: the user always confirms the entity. */
+  /**
+   * 0–1. Auto-confirm happens only past the conservative thresholds in
+   * core/resolve.ts; anything ambiguous goes to the chooser, and
+   * "change entity" stays one click away after an auto-confirm.
+   */
   confidence: number;
 }
 
@@ -39,6 +43,8 @@ export interface BusinessProfile {
   name: string;
   domain?: string;
   location?: string;
+  /** Site's own self-description (og/meta description) — attributed as such in the UI. */
+  about?: string;
   rows: ProfileRow[];
   fetchedAt: string;
 }

@@ -45,7 +45,7 @@ Design decisions worth stating:
 
 - **`adapters/middesk.ts` exists from day one, typed against Middesk's documented API shapes, deliberately inert.** The free-source fleet exists because Middesk's API is sales-gated; if a key is wired in, one `POST /v1/businesses` replaces all of it. The adapter interface is the pitch, in code.
 - **Status vocabulary mirrors Middesk's review tasks** (`success`/`warning`/`failure`) so their API maps in without renames.
-- **The user always confirms the entity.** Domain→legal-entity resolution is genuinely hard (it's part of what Middesk sells); the panel proposes candidates with confidence scores and never auto-asserts.
+- **Entity confirmation is ambiguity-gated.** Domain→legal-entity resolution is genuinely hard (it's part of what Middesk sells). Past the conservative thresholds in `core/resolve.ts` the panel auto-confirms and says where the identification came from; anything murky gets the chooser, and "change entity" is always one click.
 - **No LLM in the data path.** Parse → query → render. A row either cites a government source or shows a designed absence; the tool is hallucination-free by construction.
 - **Vanilla TypeScript, no framework.** A panel of list rows doesn't need React; reviewers can read the whole thing in one sitting.
 

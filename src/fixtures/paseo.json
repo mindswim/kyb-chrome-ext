@@ -8,13 +8,14 @@
     "name": "Paseo, Inc.",
     "domain": "paseo.example",
     "location": "Seattle, WA",
+    "about": "Paseo builds small-batch cold-brew equipment for cafés and roasters.",
     "fetchedAt": "2026-08-13T17:20:00Z",
     "rows": [
       {
         "section": "registration",
         "label": "Colorado",
         "value": "Active · good standing",
-        "detail": "Foreign registration · reg. 2016-03-11 · agent: Registered Agents Inc.",
+        "detail": "Corporation · foreign registration · file 20161178402 · reg. 2016-03-11 · agent: Registered Agents Inc., Denver CO",
         "status": "success",
         "source": { "label": "CO Secretary of State", "url": "https://data.colorado.gov" }
       },
@@ -37,7 +38,7 @@
         "section": "federal",
         "label": "SEC EDGAR",
         "value": "Form D · 2021",
-        "detail": "Reg D exempt offering · 2 related persons on filing",
+        "detail": "Reg D exempt offering · SIC 3556 (food products machinery) · 2 related persons on filing · WA incorporation on file",
         "status": "success",
         "source": { "label": "SEC EDGAR", "url": "https://efts.sec.gov" }
       },

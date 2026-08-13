@@ -1,4 +1,6 @@
 import './panel.css';
+import { pickAutoConfirm } from '../core/resolve';
+import { summarize } from '../core/summarize';
 import type { BusinessProfile, EntityCandidate, ProfileRow, SectionId } from '../core/types';
 import paseo from '../fixtures/paseo.json';
 import thin from '../fixtures/thin.json';
@@ -131,14 +133,31 @@ function candidatesCard(candidates: EntityCandidate[], onConfirm: (c: EntityCand
   return card;
 }
 
-function entityHeader(profile: BusinessProfile, onChange: () => void): HTMLElement {
+function entityHeader(
+  profile: BusinessProfile,
+  onChange: () => void,
+  identifiedFrom?: string,
+): HTMLElement {
   const card = h('section', 'card entity', [h('h2', undefined, [profile.name])]);
   const meta = [profile.domain, profile.location].filter(Boolean).join(' · ');
   if (meta) card.append(h('div', 'meta', [meta]));
+  if (profile.about) {
+    card.append(h('p', 'about', [`“${profile.about}” — from the site's own metadata`]));
+  }
+  const foot = h('div', 'entity-foot');
+  if (identifiedFrom) foot.append(h('span', 'idfrom', [`identified from ${identifiedFrom}`]));
   const change = h('button', 'change', ['change entity']);
   change.addEventListener('click', onChange);
-  card.append(change);
+  foot.append(change);
+  card.append(foot);
   return card;
+}
+
+function snapshotCard(rows: ProfileRow[]): HTMLElement {
+  return h('section', 'card summary', [
+    h('div', 'section-label', ['Snapshot']),
+    h('p', undefined, [summarize(rows)]),
+  ]);
 }
 
 function lockedBlock(): HTMLElement {
@@ -264,15 +283,18 @@ function boot(): void {
     showFixture: (key: string) => {
       const f = FIXTURES[key];
       if (!f) return;
-      const showProfile = () =>
+      const auto = pickAutoConfirm(f.candidates);
+      const showProfile = (identifiedFrom?: string) =>
         main.replaceChildren(
-          entityHeader(f.profile, showCandidates),
+          entityHeader(f.profile, showCandidates, identifiedFrom),
+          snapshotCard(f.profile.rows),
           ...sectionCards(f.profile.rows),
           lockedBlock(),
         );
       const showCandidates = () =>
-        main.replaceChildren(candidatesCard(f.candidates, showProfile));
-      showCandidates();
+        main.replaceChildren(candidatesCard(f.candidates, () => showProfile()));
+      if (auto) showProfile(ORIGIN_LABELS[auto.origin]);
+      else showCandidates();
     },
   };
 
