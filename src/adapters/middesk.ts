@@ -71,8 +71,6 @@ export interface MiddeskBusiness {
   } | null;
 }
 
-const MIDDESK_SOURCE = { label: 'Middesk · 400+ authoritative sources' };
-
 function prettyStanding(sub: string): string {
   return sub.replaceAll('_', ' ').toLowerCase();
 }
@@ -88,7 +86,6 @@ export function rowsFromMiddesk(b: MiddeskBusiness): ProfileRow[] {
         .filter(Boolean)
         .join(' · '),
       status: 'neutral',
-      source: MIDDESK_SOURCE,
     });
   }
 
@@ -106,7 +103,6 @@ export function rowsFromMiddesk(b: MiddeskBusiness): ProfileRow[] {
         .filter(Boolean)
         .join(' · '),
       status: r.status === 'active' ? 'success' : r.status === 'inactive' ? 'warning' : 'neutral',
-      source: { label: 'Middesk · Secretary of State' },
     });
   }
 
@@ -117,7 +113,6 @@ export function rowsFromMiddesk(b: MiddeskBusiness): ProfileRow[] {
       value: `${b.people.length} listed`,
       detail: b.people.map((p) => `${p.name} (${p.titles.join(', ')})`).join(' · '),
       status: 'success',
-      source: MIDDESK_SOURCE,
     });
   }
 
@@ -128,7 +123,6 @@ export function rowsFromMiddesk(b: MiddeskBusiness): ProfileRow[] {
       value: b.tin.verified ? 'Verified by IRS' : b.tin.mismatch ? 'Name mismatch' : 'Not found',
       detail: b.tin.verified ? `EIN–name match on IRS records for “${b.tin.name}”` : undefined,
       status: b.tin.verified ? 'success' : b.tin.mismatch ? 'warning' : 'failure',
-      source: { label: 'Middesk · IRS' },
     });
   }
 
@@ -139,7 +133,6 @@ export function rowsFromMiddesk(b: MiddeskBusiness): ProfileRow[] {
       value: b.watchlist.hit_count === 0 ? 'No hits' : `${b.watchlist.hit_count} hit(s)`,
       detail: 'OFAC (8 lists) + BIS, DDTC, ISN screened',
       status: b.watchlist.hit_count === 0 ? 'success' : 'failure',
-      source: MIDDESK_SOURCE,
     });
   }
 
@@ -156,7 +149,6 @@ export function rowsFromMiddesk(b: MiddeskBusiness): ProfileRow[] {
         .filter(Boolean)
         .join(' · '),
       status: 'neutral',
-      source: MIDDESK_SOURCE,
     });
   }
 
@@ -169,7 +161,6 @@ export function rowsFromMiddesk(b: MiddeskBusiness): ProfileRow[] {
         ? `domain created ${b.website.domain.creation_date}`
         : undefined,
       status: b.website.status === 'online' ? 'success' : 'warning',
-      source: MIDDESK_SOURCE,
     });
   }
 

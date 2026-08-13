@@ -11,20 +11,13 @@ export type RowStatus = 'success' | 'warning' | 'failure' | 'neutral' | 'locked'
 
 export type SectionId = 'registration' | 'federal' | 'web';
 
-export interface SourceRef {
-  /** Short human label, e.g. "CO Secretary of State". */
-  label: string;
-  url?: string;
-}
-
 export interface ProfileRow {
   section: SectionId;
   label: string;
   value: string;
-  /** Secondary line under the value (officer names, filing detail, why a gap exists). */
+  /** Secondary line under the value (officer names, filing detail, screened lists). */
   detail?: string;
   status: RowStatus;
-  source?: SourceRef;
 }
 
 export interface BusinessProfile {

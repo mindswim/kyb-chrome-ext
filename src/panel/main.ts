@@ -35,22 +35,13 @@ function topbar(): HTMLElement {
   return h('header', 'topbar', [h('span', 'logo'), h('h1', undefined, ['Middesk Check'])]);
 }
 
+// One row grammar everywhere, matching their report's label-over-value groups.
 function rowEl(row: ProfileRow): HTMLElement {
-  const el = h('div', 'row', [
-    h('span', 'label', [row.label]),
-    h('span', 'value', [row.value]),
-    h('span', `st st--${row.status}`),
+  const el = h('div', 'mrow', [
+    h('div', 'mrow-top', [h('span', 'lbl', [row.label]), h('span', `st st--${row.status}`)]),
+    h('div', 'val', [row.value]),
   ]);
-  if (row.detail) el.append(h('span', 'detail', [row.detail]));
-  if (row.source) {
-    const a = h('a', 'source', [`Source: ${row.source.label} ↗`]);
-    if (row.source.url) {
-      a.href = row.source.url;
-      a.target = '_blank';
-      a.rel = 'noopener';
-    }
-    el.append(a);
-  }
+  if (row.detail) el.append(h('div', 'detail', [row.detail]));
   return el;
 }
 
@@ -182,13 +173,16 @@ function ghostPreview(): HTMLElement[] {
   return (Object.keys(widths) as SectionId[]).map((s) => {
     const card = h('section', 'card card--ghost', [h('div', 'section-label', [SECTION_TITLES[s]])]);
     for (const w of widths[s]) {
-      const row = h('div', 'row row--ghost');
       const label = h('span', 'bar');
       label.style.width = '56px';
       const value = h('span', 'bar');
       value.style.width = `${w}px`;
-      row.append(label, value, h('span', 'st st--neutral'));
-      card.append(row);
+      card.append(
+        h('div', 'mrow mrow--ghost', [
+          h('div', 'mrow-top', [label, h('span', 'st st--neutral')]),
+          value,
+        ]),
+      );
     }
     return card;
   });
