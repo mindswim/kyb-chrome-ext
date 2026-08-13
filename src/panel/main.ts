@@ -164,6 +164,21 @@ function ctaCard(): HTMLElement {
     'https://www.middesk.com/contact?utm_source=kyb-check&utm_medium=extension&utm_campaign=concept-demo';
   a.target = '_blank';
   a.rel = 'noopener';
+  a.addEventListener('click', (e) => {
+    // Embedded in the hosted demo, the handoff opens as a tab of the
+    // simulated browser; the real extension opens a real tab.
+    if (window.self === window.top) return;
+    e.preventDefault();
+    window.parent.postMessage(
+      {
+        type: 'kyb-open-url',
+        url: a.href,
+        host: 'middesk.com/contact',
+        label: 'Dive into Middesk',
+      },
+      location.origin,
+    );
+  });
   card.append(a);
   return card;
 }
