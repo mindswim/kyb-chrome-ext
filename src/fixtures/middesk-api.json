@@ -76,7 +76,8 @@
     ],
     "risk_assessment": {
       "score": 12,
-      "band": "low",
+      "level": "low",
+      "title": "Established Washington corporation with active registrations in three states, a verified TIN and no watchlist or fraud indicators.",
       "indicators": { "positive": 4, "neutral": 2, "negative": 0 }
     }
   }

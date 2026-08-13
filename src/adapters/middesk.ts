@@ -9,12 +9,11 @@ import type {
 /**
  * The production seam.
  *
- * Middesk's API is sales-gated (no self-serve keys), so this adapter ships
- * dormant — but the ingestion path is implemented, not sketched: the demo's
- * "Middesk API sample" renders a fixture shaped exactly like their documented
- * Business response (docs.middesk.com/reference/business) through the same
- * mapper the live path uses. Wire a key and the free-source fleet is
- * replaced by one call.
+ * Middesk's API is sales-gated (no self-serve keys), so out of the box the
+ * Verify flow renders a fixture shaped exactly like their documented Business
+ * response (docs.middesk.com/reference/business) through the same mapper the
+ * live path uses. Configure `middeskAccess` in chrome.storage (proxy URL or
+ * sandbox key) and the same flow calls the real API instead.
  *
  * Types cover the subset of their documented schema this panel renders.
  */
@@ -63,10 +62,18 @@ export interface MiddeskBusiness {
     domain?: { creation_date?: string };
   } | null;
   addresses?: { full_address?: string; city?: string; state?: string }[];
-  /** Subset of their risk-assessment shape (0–100, banded low/moderate/high). */
+  /**
+   * Composite for the demo: their Risk Assessment is a separate resource
+   * (GET /risk_assessments/latest, linked via business.risk.latest_assessment_id).
+   * `score`, `level`, and `title` (their "one-sentence analyst headline") are
+   * verbatim documented fields; `indicators` condenses the dashboard's
+   * Positive/Neutral/Negative tally of the `dimensions` array. Production
+   * makes that second call instead of reading it off the Business.
+   */
   risk_assessment?: {
     score: number;
-    band: 'low' | 'moderate' | 'high';
+    level: 'low' | 'moderate' | 'high';
+    title?: string;
     indicators: { positive: number; neutral: number; negative: number };
   } | null;
 }
@@ -185,7 +192,12 @@ export function matchCardsFromMiddesk(b: MiddeskBusiness): MatchCard[] {
 
   const addr = b.addresses?.[0];
   if (addr?.full_address) {
-    cards.push({ label: 'Office address', value: addr.full_address, match: 'Match', status: 'success' });
+    cards.push({
+      label: 'Office address',
+      value: addr.full_address,
+      match: 'Match',
+      status: 'success',
+    });
   }
 
   if (b.registrations.length) {
@@ -217,7 +229,9 @@ export function matchCardsFromMiddesk(b: MiddeskBusiness): MatchCard[] {
   if (firstPerson) {
     cards.push({
       label: 'People',
-      value: morePeople.length ? `${firstPerson.name} +${morePeople.length} more` : firstPerson.name,
+      value: morePeople.length
+        ? `${firstPerson.name} +${morePeople.length} more`
+        : firstPerson.name,
       match: 'Match',
       status: 'success',
     });
@@ -262,8 +276,7 @@ const API_BASE = 'https://api.middesk.com/v1';
  *   panel go live without standing up the proxy first.
  */
 export type MiddeskAccess =
-  | { mode: 'proxy'; proxyUrl: string }
-  | { mode: 'direct-sandbox'; apiKey: string };
+  { mode: 'proxy'; proxyUrl: string } | { mode: 'direct-sandbox'; apiKey: string };
 
 /**
  * Direct path against their documented REST API (Bearer auth, per
@@ -299,6 +312,15 @@ export async function fetchMiddeskBusiness(
   return business;
 }
 
+export async function resolveMiddeskBusiness(
+  q: EntityQuery,
+  access: MiddeskAccess,
+): Promise<MiddeskBusiness> {
+  return access.mode === 'proxy'
+    ? fetchViaProxy(q, access.proxyUrl)
+    : fetchMiddeskBusiness(q, access.apiKey);
+}
+
 async function fetchViaProxy(q: EntityQuery, proxyUrl: string): Promise<MiddeskBusiness> {
   const res = await fetch(`${proxyUrl.replace(/\/$/, '')}/verify`, {
     method: 'POST',
@@ -320,11 +342,7 @@ export function createMiddeskAdapter(access?: MiddeskAccess): SourceAdapter {
             'The demo renders their response schema from fixtures in the meantime.',
         );
       }
-      const business =
-        access.mode === 'proxy'
-          ? await fetchViaProxy(q, access.proxyUrl)
-          : await fetchMiddeskBusiness(q, access.apiKey);
-      return rowsFromMiddesk(business);
+      return rowsFromMiddesk(await resolveMiddeskBusiness(q, access));
     },
   };
 }

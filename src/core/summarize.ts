@@ -13,7 +13,9 @@ function listJoin(items: string[]): string {
  */
 export function summarize(rows: ProfileRow[]): string {
   const activeStates = rows
-    .filter((r) => r.section === 'registration' && r.status === 'success' && /active/i.test(r.value))
+    .filter(
+      (r) => r.section === 'registration' && r.status === 'success' && /active/i.test(r.value),
+    )
     .map((r) => r.label);
   const lead = activeStates.length
     ? `Active in ${listJoin(activeStates)}`
@@ -30,7 +32,8 @@ export function summarize(rows: ProfileRow[]): string {
   }
 
   const tin = rows.find((r) => r.label === 'TIN Match');
-  if (tin) clauses.push(tin.status === 'success' ? 'a verified TIN' : `TIN ${tin.value.toLowerCase()}`);
+  if (tin)
+    clauses.push(tin.status === 'success' ? 'a verified TIN' : `TIN ${tin.value.toLowerCase()}`);
 
   const watchlists = rows.find((r) => r.label === 'Watchlists');
   if (watchlists) {

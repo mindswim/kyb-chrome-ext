@@ -2,7 +2,9 @@ import './panel.css';
 import {
   matchCardsFromMiddesk,
   profileFromMiddesk,
+  resolveMiddeskBusiness,
   type MatchCard,
+  type MiddeskAccess,
   type MiddeskBusiness,
 } from '../adapters/middesk';
 import { summarize } from '../core/summarize';
@@ -74,11 +76,11 @@ function matchStack(cards: MatchCard[]): HTMLElement {
 }
 
 function riskCard(risk: NonNullable<MiddeskBusiness['risk_assessment']>): HTMLElement {
-  const band = risk.band.charAt(0).toUpperCase() + risk.band.slice(1);
+  const level = risk.level.charAt(0).toUpperCase() + risk.level.slice(1);
   const card = h('section', 'card riskcard', [
     h('div', 'mrow-top', [
       h('span', 'lbl', ['Fraud intelligence']),
-      h('span', `pill-status pill-status--${risk.band}`, [`${band} risk`]),
+      h('span', `pill-status pill-status--${risk.level}`, [`${level} risk`]),
     ]),
   ]);
   const tally = h('div', 'tally');
@@ -108,27 +110,23 @@ function entityHeader(
   const card = h('section', 'card entity', [top]);
   const meta = [profile.domain, profile.location].filter(Boolean).join(' · ');
   if (meta) card.append(h('div', 'meta', [meta]));
+  if (profile.about) card.append(h('p', 'about', [profile.about]));
   const back = h('button', 'change', ['New search']);
   back.addEventListener('click', onNewSearch);
   card.append(h('div', 'entity-foot', [back]));
   return card;
 }
 
-function snapshotCard(rows: ProfileRow[]): HTMLElement {
+/**
+ * Prefers the risk assessment's `title` — their real one-sentence analyst
+ * headline field — and falls back to our deterministic generator when a
+ * response has no assessment.
+ */
+function snapshotCard(rows: ProfileRow[], headline?: string): HTMLElement {
   return h('section', 'card summary', [
     h('div', 'section-label', ['Snapshot']),
-    h('p', undefined, [summarize(rows)]),
+    h('p', undefined, [headline ?? summarize(rows)]),
   ]);
-}
-
-function aboutCard(profile: BusinessProfile): HTMLElement[] {
-  if (!profile.about) return [];
-  return [
-    h('section', 'card aboutcard', [
-      h('div', 'section-label', ['Business description']),
-      h('p', undefined, [profile.about]),
-    ]),
-  ];
 }
 
 /** Core verification is the panel's scope; everything deeper clicks out. */
@@ -221,14 +219,38 @@ function stage(): HTMLElement {
   return s;
 }
 
+/**
+ * In the extension, a Middesk key or proxy URL can be configured at runtime
+ * via chrome.storage (never bundled — see README security posture). Absent
+ * that — and always in the web harness — Verify renders the API-schema
+ * fixture with demo latency.
+ */
+async function loadAccess(): Promise<MiddeskAccess | null> {
+  if (typeof chrome === 'undefined' || !chrome.storage?.local) return null;
+  const stored = await chrome.storage.local.get('middeskAccess');
+  return (stored['middeskAccess'] as MiddeskAccess | undefined) ?? null;
+}
+
+async function resolveBusiness(): Promise<MiddeskBusiness> {
+  const fixture = middeskApi.business as unknown as MiddeskBusiness;
+  const access = await loadAccess();
+  if (access) {
+    // In the live product the query comes from page extraction (Phase 3);
+    // until then the fixture's identity doubles as the query.
+    return resolveMiddeskBusiness(
+      { name: fixture.name, domain: fixture.website?.url?.replace(/^https?:\/\//, '') },
+      access,
+    );
+  }
+  await new Promise((resolve) => setTimeout(resolve, 1600));
+  return fixture;
+}
+
 function boot(): void {
   const app = document.getElementById('app')!;
   const column = h('div', 'col');
   const main = h('main');
   column.append(topbar(), main);
-
-  const business = middeskApi.business as unknown as MiddeskBusiness;
-  const profile = profileFromMiddesk(business);
 
   // Staggered entrance keeps view changes from feeling like a hard swap.
   const enter = (): void => {
@@ -250,24 +272,37 @@ function boot(): void {
     scrollTop();
   };
 
-  const showReport = (): void => {
+  const showReport = (business: MiddeskBusiness): void => {
+    const profile = profileFromMiddesk(business);
     const statusPill =
       business.status === 'approved'
         ? 'Approved'
         : business.status.replace('_', ' ').replace(/^./, (ch) => ch.toUpperCase());
     main.replaceChildren(
       entityHeader(profile, statusPill, showIdle),
-      snapshotCard(profile.rows),
+      snapshotCard(profile.rows, business.risk_assessment?.title),
       matchStack(matchCardsFromMiddesk(business)),
       ...(business.risk_assessment ? [riskCard(business.risk_assessment)] : []),
       // TIN and watchlists live in the verification stack; the sections below
       // add the per-state and web detail.
       ...sectionCards(profile.rows.filter((r) => r.section !== 'federal')),
-      ...aboutCard(profile),
       ctaCard(),
     );
     enter();
     scrollTop();
+  };
+
+  const showError = (message: string): void => {
+    const retry = h('button', 'btn', ['Try again']);
+    retry.addEventListener('click', showIdle);
+    main.replaceChildren(
+      h('section', 'card', [
+        h('div', 'section-label', ['Verification did not complete']),
+        h('p', 'errmsg', [message]),
+      ]),
+      h('div', 'hero-actions', [retry]),
+    );
+    enter();
   };
 
   // Verification happens inside the first view: the hero becomes the toast
@@ -276,7 +311,9 @@ function boot(): void {
   const verifyFlow = (): void => {
     main.querySelector('.hero')?.replaceWith(toast());
     main.querySelectorAll('.card--ghost .bar').forEach((b) => b.classList.add('bar--live'));
-    setTimeout(showReport, 1600);
+    resolveBusiness()
+      .then(showReport)
+      .catch((err: unknown) => showError(err instanceof Error ? err.message : String(err)));
   };
 
   if (IS_EXTENSION) {
