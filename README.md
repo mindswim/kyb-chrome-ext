@@ -2,7 +2,9 @@
 
 A concept Chrome extension built for [Middesk](https://www.middesk.com): open the side panel on a business website and get a verification report — registration status by state, TIN match, watchlists, officers, fraud indicators — rendered in Middesk's own report grammar. Candidate work sample; not affiliated with Middesk.
 
-![The demo browser](docs/demo-harbor.jpg)
+**Live demo: [mindswim.co/kyb-check](https://mindswim.co/kyb-check)**
+
+![The demo browser](docs/demo.jpg)
 
 ## Why this exists
 
@@ -10,7 +12,7 @@ Middesk sells business verification (KYB) through a sales-led API. Its buyers �
 
 ## Try it
 
-The demo is a simulated Chrome window — three fictional businesses, the real panel docked beside them, nothing to install:
+The hosted demo above is a simulated Chrome window — three fictional businesses, the real panel docked beside them, nothing to install. Locally:
 
 ```sh
 npm install

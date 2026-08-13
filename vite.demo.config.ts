@@ -4,6 +4,8 @@ import { defineConfig } from 'vite';
 // it embeds. Kept separate from vite.config.ts so `npm run build` stays a
 // pure extension build — the harness never ships in the unpacked extension.
 export default defineConfig({
+  // Relative asset paths so the bundle serves from any subpath (e.g. mindswim.co/kyb-check).
+  base: './',
   build: {
     outDir: 'dist-demo',
     emptyOutDir: true,
