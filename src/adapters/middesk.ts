@@ -58,6 +58,12 @@ export interface MiddeskBusiness {
   } | null;
   website?: { url?: string; status?: string; domain?: { creation_date?: string } } | null;
   addresses?: { full_address?: string; city?: string; state?: string }[];
+  /** Subset of their risk-assessment shape (0–100, banded low/moderate/high). */
+  risk_assessment?: {
+    score: number;
+    band: 'low' | 'moderate' | 'high';
+    indicators: { positive: number; neutral: number; negative: number };
+  } | null;
 }
 
 const MIDDESK_SOURCE = { label: 'Middesk · 400+ authoritative sources' };

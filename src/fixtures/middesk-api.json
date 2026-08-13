@@ -72,6 +72,11 @@
     },
     "addresses": [
       { "full_address": "411 Fremont Ave N, Seattle, WA 98103", "city": "Seattle", "state": "WA" }
-    ]
+    ],
+    "risk_assessment": {
+      "score": 12,
+      "band": "low",
+      "indicators": { "positive": 4, "neutral": 2, "negative": 0 }
+    }
   }
 }

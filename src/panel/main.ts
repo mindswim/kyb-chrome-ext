@@ -58,9 +58,7 @@ function h<K extends keyof HTMLElementTagNameMap>(
 }
 
 function topbar(): HTMLElement {
-  const bar = h('header', 'topbar', [h('span', 'logo'), h('h1', undefined, ['Middesk Check'])]);
-  bar.append(h('span', 'chip', ['CONCEPT']));
-  return bar;
+  return h('header', 'topbar', [h('span', 'logo'), h('h1', undefined, ['Middesk Check'])]);
 }
 
 function statusIcon(row: ProfileRow): HTMLElement {
@@ -143,21 +141,32 @@ function candidatesCard(candidates: EntityCandidate[], onConfirm: (c: EntityCand
 function entityHeader(
   profile: BusinessProfile,
   onChange: () => void,
-  identifiedFrom?: string,
+  opts?: { identifiedFrom?: string; statusPill?: string },
 ): HTMLElement {
-  const card = h('section', 'card entity', [h('h2', undefined, [profile.name])]);
+  const top = h('div', 'entity-top', [h('h2', undefined, [profile.name])]);
+  if (opts?.statusPill) top.append(h('span', 'pill-status pill-status--low', [opts.statusPill]));
+  const card = h('section', 'card entity', [top]);
   const meta = [profile.domain, profile.location].filter(Boolean).join(' · ');
   if (meta) card.append(h('div', 'meta', [meta]));
-  if (profile.about) {
-    card.append(h('p', 'about', [`“${profile.about}” — from the site's own metadata`]));
-  }
   const foot = h('div', 'entity-foot');
-  if (identifiedFrom) foot.append(h('span', 'idfrom', [`identified from ${identifiedFrom}`]));
+  if (opts?.identifiedFrom) {
+    foot.append(h('span', 'idfrom', [`identified from ${opts.identifiedFrom}`]));
+  }
   const change = h('button', 'change', ['change entity']);
   change.addEventListener('click', onChange);
   foot.append(change);
   card.append(foot);
   return card;
+}
+
+function aboutCard(profile: BusinessProfile): HTMLElement[] {
+  if (!profile.about) return [];
+  return [
+    h('section', 'card aboutcard', [
+      h('div', 'section-label', ['Business description']),
+      h('p', undefined, [profile.about]),
+    ]),
+  ];
 }
 
 function snapshotCard(rows: ProfileRow[]): HTMLElement {
@@ -178,13 +187,6 @@ function lockedBlock(): HTMLElement {
   p.append(LOCKED_CAPS + '.');
   block.append(h('button', 'btn btn--lime', ['See a full sample report →']));
   return block;
-}
-
-function disclaimer(): HTMLElement {
-  return h('p', 'disclaimer', [
-    'Public records only — not a compliance decision, credit decision, or consumer report. ' +
-      'Every row links to its government source. Candidate concept demo; not affiliated with Middesk.',
-  ]);
 }
 
 function loadingView(): HTMLElement[] {
@@ -244,34 +246,46 @@ function matchStack(cards: MatchCard[]): HTMLElement {
   return wrap;
 }
 
-function apiNote(): HTMLElement {
-  return h('section', 'card api-note', [
-    'Rendered from a verbatim Middesk Business response — their documented schema, invented ' +
-      'values. With an API key, adapters/middesk.ts fills this live. Nothing is locked here ' +
-      'because this is the full record.',
+/** Fraud-intelligence card + indicator tally, cloned from their product imagery. */
+function riskCard(risk: NonNullable<MiddeskBusiness['risk_assessment']>): HTMLElement {
+  const band = risk.band.charAt(0).toUpperCase() + risk.band.slice(1);
+  const card = h('section', 'card riskcard', [
+    h('div', 'mcard-top', [
+      h('span', 'lbl', ['Fraud intelligence']),
+      h('span', `pill-status pill-status--${risk.band}`, [`${band} risk`]),
+    ]),
   ]);
+  const tally = h('div', 'tally');
+  for (const [label, count, tone] of [
+    ['Positive', risk.indicators.positive, 'positive'],
+    ['Neutral', risk.indicators.neutral, 'neutral'],
+    ['Negative', risk.indicators.negative, 'negative'],
+  ] as const) {
+    tally.append(
+      h('div', 'tally-row', [
+        h('span', undefined, [label]),
+        h('span', `tally-chip tally-chip--${tone}`, [String(count)]),
+      ]),
+    );
+  }
+  card.append(tally);
+  return card;
 }
 
 function idleView(ctl: Controller): HTMLElement[] {
   const hero = h('section', 'hero', [
     h('h2', undefined, ['Know the business behind any site.']),
     h('p', undefined, [
-      'Registration status, filings, sanctions, domain age — public records, every row cited.',
+      'Registration status, filings, watchlists, web presence — verified against authoritative sources.',
     ]),
   ]);
-  const buttons = h('div', 'confirm-row samples');
-  const entries: [string, () => void][] = [
-    ['Full record · API schema', () => ctl.showMiddeskSample()],
-    ['Public-records sample', () => ctl.showFixture('paseo')],
-    ['Thin-data sample', () => ctl.showFixture('thin')],
-    ['Loading state', () => ctl.showLoading()],
-  ];
-  for (const [label, fn] of entries) {
-    const b = h('button', 'btn btn--ghost', [label]);
-    b.addEventListener('click', fn);
-    buttons.append(b);
-  }
-  hero.append(buttons, h('p', 'note', ['Live page scan arrives in Phase 2 — previews below.']));
+  const verify = h('button', 'btn', ['Verify this business']);
+  verify.addEventListener('click', () => {
+    // Brief searching state before the report, mirroring their async flow.
+    ctl.showLoading();
+    setTimeout(() => ctl.showMiddeskSample(), 900);
+  });
+  hero.append(h('div', 'confirm-row samples', [verify]));
   return [hero, ...ghostPreview()];
 }
 
@@ -309,7 +323,7 @@ function boot(): void {
   const app = document.getElementById('app')!;
   const column = h('div', 'col');
   const main = h('main');
-  const footer = h('footer', 'panel-footer', [disclaimer()]);
+  const footer = h('footer', 'panel-footer');
 
   const ctl: Controller = {
     showIdle: () => main.replaceChildren(...idleView(ctl)),
@@ -320,9 +334,10 @@ function boot(): void {
       const auto = pickAutoConfirm(f.candidates);
       const showProfile = (identifiedFrom?: string) =>
         main.replaceChildren(
-          entityHeader(f.profile, showCandidates, identifiedFrom),
+          entityHeader(f.profile, showCandidates, { identifiedFrom }),
           snapshotCard(f.profile.rows),
           ...sectionCards(f.profile.rows),
+          ...aboutCard(f.profile),
           lockedBlock(),
         );
       const showCandidates = () =>
@@ -333,11 +348,15 @@ function boot(): void {
     showMiddeskSample: () => {
       const business = middeskApi.business as unknown as MiddeskBusiness;
       const profile = profileFromMiddesk(business);
+      const statusPill =
+        business.status === 'approved'
+          ? 'Approved'
+          : business.status.replace('_', ' ').replace(/^./, (ch) => ch.toUpperCase());
       main.replaceChildren(
-        entityHeader(profile, () => ctl.showIdle(), 'a Middesk API response (fixture)'),
-        apiNote(),
+        entityHeader(profile, () => ctl.showIdle(), { statusPill }),
         snapshotCard(profile.rows),
         matchStack(matchCardsFromMiddesk(business)),
+        ...(business.risk_assessment ? [riskCard(business.risk_assessment)] : []),
         // TIN and watchlists live in the stack above; the remaining sections
         // add the per-state and web detail beneath it.
         ...sectionCards(profile.rows.filter((r) => r.section !== 'federal')),
