@@ -28,10 +28,7 @@ const BOOKMARKS: Bookmark[] = [
 ];
 
 type TabView =
-  | { kind: 'business'; site: SiteSpec }
-  | { kind: 'bookmark'; bm: Bookmark }
-  | { kind: 'external'; url: string; host: string; label: string }
-  | { kind: 'newtab' };
+  { kind: 'business'; site: SiteSpec } | { kind: 'bookmark'; bm: Bookmark } | { kind: 'newtab' };
 
 interface Tab {
   id: number;
@@ -60,14 +57,12 @@ const activeTab = (): Tab | undefined => tabs.find((t) => t.id === activeId);
 function titleOf(view: TabView): string {
   if (view.kind === 'business') return view.site.tabTitle;
   if (view.kind === 'bookmark') return view.bm.label;
-  if (view.kind === 'external') return view.label;
   return 'New Tab';
 }
 
 function colorOf(view: TabView): string {
   if (view.kind === 'business') return view.site.tabDot;
   if (view.kind === 'bookmark') return view.bm.color;
-  if (view.kind === 'external') return '#0b3139';
   return '#c4c7cc';
 }
 
@@ -110,36 +105,10 @@ function newTabPage(): HTMLElement {
   return h('div', 'newtab', [h('div', 'nt-mark', ['Chrome']), search, grid]);
 }
 
-/**
- * middesk.com sends X-Frame-Options: SAMEORIGIN, so the handoff target cannot
- * render inside the simulated browser. The tab shows where the lead lands and
- * hands off to a real one.
- */
-function externalPage(view: { url: string; host: string }): HTMLElement {
-  const open = h('a', 'ext-open', [`Open ${view.host} →`]);
-  open.href = view.url;
-  open.target = '_blank';
-  open.rel = 'noopener';
-  return h('div', 'external', [
-    h('div', 'ext-card', [
-      h('h1', undefined, ['This is where the lead lands.']),
-      h('p', undefined, [
-        'The demo hands off to Middesk’s real contact page here. Their site declines to ' +
-          'render inside other sites (X-Frame-Options: SAMEORIGIN) — the right call for a ' +
-          'trust brand — so the handoff opens in a real tab.',
-      ]),
-      open,
-    ]),
-  ]);
-}
-
 function renderContent(view: TabView): void {
   if (view.kind === 'business') {
     urlText.textContent = view.site.domain;
     siteRegion.replaceChildren(renderSite(view.site));
-  } else if (view.kind === 'external') {
-    urlText.textContent = view.host;
-    siteRegion.replaceChildren(externalPage(view));
   } else if (view.kind === 'bookmark') {
     urlText.textContent = view.bm.host;
     const frame = document.createElement('iframe');
@@ -282,16 +251,6 @@ function boot(): void {
   browser.classList.add('panel-open');
   browser.append(tabstrip, toolbar(), bookmarksBar(), h('div', 'browser-body', [siteRegion, dock]));
   overlayScrollbar(siteRegion);
-
-  // The embedded panel asks for link-outs to open as tabs of this browser.
-  window.addEventListener('message', (e: MessageEvent) => {
-    if (e.origin !== location.origin) return;
-    const d = e.data as { type?: string; url?: string; host?: string; label?: string };
-    if (d?.type === 'kyb-open-url' && d.url && d.host) {
-      openInNewTab({ kind: 'external', url: d.url, host: d.host, label: d.label ?? d.host });
-    }
-  });
-
   render();
 }
 
