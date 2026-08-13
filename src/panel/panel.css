@@ -35,6 +35,27 @@ body {
   font: 14px/1.5 var(--sans);
 }
 
+/* Minimal scrollbars — Chrome honors these in extension pages and the side
+   panel exactly as it does on the web. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(11, 49, 57, 0.22) transparent;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(11, 49, 57, 0.22);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(11, 49, 57, 0.38);
+}
+
 /* ---------- the panel column ---------- */
 .col {
   display: flex;
@@ -48,79 +69,6 @@ main {
   display: grid;
   gap: 10px;
   align-content: start;
-}
-
-/* ---------- harness: simulate Chrome's side panel dock ---------- */
-.harness .frame {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--panel-w);
-  min-height: 100dvh;
-}
-
-.stage {
-  background: #eceff0;
-  padding: 28px clamp(20px, 5vw, 64px);
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.ph-page {
-  display: grid;
-  gap: 14px;
-  opacity: 0.75;
-}
-.ph {
-  background: #fff;
-  border: 1px solid #dfe5e6;
-  border-radius: 10px;
-  min-height: 88px;
-}
-.ph--nav {
-  min-height: 48px;
-}
-.ph--hero {
-  min-height: 180px;
-}
-.ph--block {
-  min-height: 140px;
-}
-.ph-cols {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-
-.stage-note {
-  margin-top: auto;
-  text-align: center;
-  font: 11.5px var(--mono);
-  color: var(--slate);
-  letter-spacing: 0.04em;
-}
-
-.dock {
-  height: 100dvh;
-  overflow-y: auto;
-  background: var(--snow);
-  box-shadow: -10px 0 28px rgba(11, 49, 57, 0.07);
-}
-.dock .col {
-  min-height: 100%;
-}
-
-@media (max-width: 760px) {
-  .harness .frame {
-    grid-template-columns: 1fr;
-  }
-  .stage {
-    display: none;
-  }
-  .dock {
-    height: auto;
-    overflow: visible;
-    box-shadow: none;
-  }
 }
 
 /* ---------- top bar ---------- */
@@ -315,6 +263,10 @@ a:focus-visible {
 .pill-status--high {
   background: var(--bad);
   color: #fff;
+}
+.pill-status--neutral {
+  background: var(--wash);
+  color: var(--midnight-80);
 }
 
 /* ---------- verification stack (their report grammar, app density) ---------- */

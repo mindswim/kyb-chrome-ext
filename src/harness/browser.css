@@ -1,0 +1,313 @@
+/* A believable Chrome window. Grays sampled from Chrome's own light chrome. */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font:
+    13px/1.4 system-ui,
+    -apple-system,
+    'Segoe UI',
+    Helvetica,
+    Arial,
+    sans-serif;
+  background: #dee1e6;
+  height: 100dvh;
+  overflow: hidden;
+  color: #202124;
+}
+
+/* Minimal scrollbars — overlay-thin, like Chrome's own. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(60, 64, 67, 0.28) transparent;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(60, 64, 67, 0.28);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(60, 64, 67, 0.45);
+}
+
+#browser {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: #5f6368;
+  cursor: default;
+  padding: 0;
+}
+.icon-btn:hover {
+  background: rgba(60, 64, 67, 0.08);
+}
+
+/* ---------- tab strip ---------- */
+.tabstrip {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  padding: 9px 10px 0;
+  background: #dee1e6;
+}
+
+.traffic {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 0 12px 11px 4px;
+}
+.traffic i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.traffic i:nth-child(1) {
+  background: #ff5f57;
+}
+.traffic i:nth-child(2) {
+  background: #febc2e;
+}
+.traffic i:nth-child(3) {
+  background: #28c840;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 232px;
+  padding: 9px 10px 9px 13px;
+  border: 0;
+  border-radius: 9px 9px 0 0;
+  background: transparent;
+  color: #3c4043;
+  cursor: default;
+  font: 12.5px/1 inherit;
+  position: relative;
+}
+.tab:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+.tab.is-active {
+  background: #fff;
+  color: #202124;
+}
+.tab:not(.is-active)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 1px;
+  background: rgba(60, 64, 67, 0.22);
+}
+.tab-favicon {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  flex: none;
+}
+.tab-title {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tab-close {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: #5f6368;
+  opacity: 0.75;
+}
+.tab-close:hover {
+  background: rgba(60, 64, 67, 0.12);
+}
+.tab-new {
+  margin: 0 0 6px 6px;
+}
+
+/* ---------- toolbar ---------- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  padding: 6px 10px;
+}
+
+.nav-btns {
+  display: flex;
+  gap: 2px;
+}
+
+.urlbar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: #f1f3f4;
+  border-radius: 999px;
+  padding: 8px 15px;
+  font-size: 13.5px;
+  min-width: 0;
+}
+.urlbar:hover {
+  background: #eceff1;
+}
+.lock {
+  display: grid;
+  place-items: center;
+  color: #5f6368;
+  flex: none;
+}
+.url-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ext-area {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* the pinned Middesk Check icon — the demo's front door */
+.mdk-pin {
+  width: 26px;
+  height: 26px;
+  margin: 0 3px;
+  border: 0;
+  border-radius: 7px;
+  background: #a7ff1c;
+  position: relative;
+  cursor: pointer;
+  flex: none;
+}
+.mdk-pin::before,
+.mdk-pin::after {
+  content: '';
+  position: absolute;
+  width: 3px;
+  height: 11px;
+  background: #0b3139;
+  border-radius: 2px;
+  transform: rotate(35deg);
+}
+.mdk-pin::before {
+  left: 9px;
+  top: 7px;
+}
+.mdk-pin::after {
+  left: 15px;
+  top: 7px;
+  height: 8px;
+}
+.mdk-pin.is-open {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px rgba(11, 49, 57, 0.85);
+}
+
+.avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  margin-left: 4px;
+  background: linear-gradient(135deg, #0b3139, #3c5a61);
+  flex: none;
+}
+
+/* ---------- bookmarks bar ---------- */
+.bookmarks {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px 7px;
+  background: #fff;
+  border-bottom: 1px solid #dadce0;
+}
+.bookmark {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  background: none;
+  border-radius: 4px;
+  padding: 5px 9px;
+  font: 12px/1 inherit;
+  color: #3c4043;
+  cursor: pointer;
+}
+.bookmark:hover {
+  background: rgba(60, 64, 67, 0.08);
+}
+.bookmark.is-active {
+  color: #202124;
+  font-weight: 600;
+}
+.bm-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex: none;
+}
+
+/* ---------- body: site + docked panel ---------- */
+.browser-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+#browser.panel-open .browser-body {
+  grid-template-columns: minmax(0, 1fr) 400px;
+}
+
+.site-region {
+  overflow-y: auto;
+  background: #fff;
+}
+
+.panel-dock {
+  border-left: 1px solid #dadce0;
+  min-height: 0;
+}
+.panel-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+@media (max-width: 900px) {
+  #browser.panel-open .browser-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .panel-dock {
+    display: none;
+  }
+}

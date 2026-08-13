@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { matchCardsFromMiddesk, profileFromMiddesk, type MiddeskBusiness } from './middesk';
+import harbor from '../fixtures/harbor.json';
 import api from '../fixtures/middesk-api.json';
+import nimbus from '../fixtures/nimbus.json';
 
 const business = api.business as unknown as MiddeskBusiness;
 
@@ -58,5 +60,29 @@ describe('matchCardsFromMiddesk', () => {
     );
     expect(cards.find((c) => c.label === 'Watchlists')?.quiet).toBe(true);
     expect(cards.find((c) => c.label === 'TIN')?.quiet).toBeUndefined();
+  });
+});
+
+describe('demo fixtures', () => {
+  it('every fixture renders rows and match cards without error', () => {
+    for (const fixture of [api, harbor, nimbus]) {
+      const b = fixture.business as unknown as MiddeskBusiness;
+      expect(profileFromMiddesk(b).rows.length).toBeGreaterThan(4);
+      expect(matchCardsFromMiddesk(b).length).toBeGreaterThan(3);
+    }
+  });
+
+  it('harbor surfaces the lapsed foreign registration as a warning', () => {
+    const rows = profileFromMiddesk(harbor.business as unknown as MiddeskBusiness).rows;
+    const or = rows.find((r) => r.label === 'OR');
+    expect(or?.value).toBe('Inactive');
+    expect(or?.status).toBe('warning');
+  });
+
+  it('nimbus surfaces the failure states', () => {
+    const cards = matchCardsFromMiddesk(nimbus.business as unknown as MiddeskBusiness);
+    expect(cards.find((c) => c.label === 'TIN')?.match).toBe('Similar match');
+    expect(cards.find((c) => c.label === 'Watchlists')?.match).toBe('Hits found');
+    expect(cards.find((c) => c.label === 'Watchlists')?.quiet).toBeFalsy();
   });
 });

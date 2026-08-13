@@ -9,7 +9,7 @@ A Chrome side-panel that answers *"is this company real?"* without leaving the p
 - [x] **Phase 1 — UI shell.** Side panel + dock harness, full design-token treatment, loading & empty states.
 - [x] **Phase 1.5 — Middesk-schema ingestion path.** `fixtures/middesk-api.json` is a Business response in their documented schema, rendered through the same `rowsFromMiddesk()` mapper the live fetch uses; `fetchMiddeskBusiness()` is implemented and dormant behind a key.
 - [x] **Phase 2 — product-fidelity pass.** Their report grammar throughout: verification stack with match verdicts, lifecycle status pill, Fraud-intelligence tally, verifying toast, app-density type scale; scope pinned to core verification with a click-out CTA for the full platform.
-- [ ] **Phase 2.5 — hosted web demo.** The panel is a plain web page, so the same build deploys as a zero-install demo link.
+- [x] **Phase 2.5 — the demo browser.** `npm run build:demo` builds a believable Chrome window (`harness.html`) with one tab per demo business — three fictional KYB-typical companies (established manufacturer, contractor with a lapsed registration, fraud-shaped young merchant), each a token-themed landing page — and the real panel embedded as an iframe, opened from a pinned extension icon. The panel has no knowledge of the harness; tabs switch businesses via `?business=<id>`. Deployable anywhere static as the zero-install link.
 - [ ] **Phase 3 — optional live public-record adapters.** The public-launch path from the GTM proposal (EDGAR, state open data, OFAC/CSL, FinCEN MSB, GLEIF, RDAP + a small Worker), plus the page-extraction + candidate-confirm flow; not required for the interview demo.
 
 ## Run it

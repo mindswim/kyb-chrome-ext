@@ -1,0 +1,76 @@
+{
+  "note": "Demo business #2 — a long-standing contractor, the classic lending/insurance verification target. Healthy overall with one lapsed foreign registration so warning states render. Invented values in Middesk's documented schema.",
+  "business": {
+    "id": "biz_demo_harbor_0000000000",
+    "name": "Harbor Line Contracting LLC",
+    "status": "approved",
+    "formation": {
+      "entity_type": "LLC",
+      "formation_state": "WA",
+      "formation_date": "2011-03-18"
+    },
+    "registrations": [
+      {
+        "name": "HARBOR LINE CONTRACTING LLC",
+        "state": "WA",
+        "status": "active",
+        "sub_status": "GOOD_STANDING",
+        "entity_type": "LLC",
+        "file_number": "603088412",
+        "jurisdiction": "DOMESTIC",
+        "registration_date": "2011-03-18"
+      },
+      {
+        "name": "HARBOR LINE CONTRACTING LLC",
+        "state": "OR",
+        "status": "inactive",
+        "sub_status": "NOT_GOOD_STANDING",
+        "entity_type": "LLC",
+        "file_number": "112899-94",
+        "jurisdiction": "FOREIGN",
+        "registration_date": "2015-06-02"
+      }
+    ],
+    "people": [
+      { "name": "Dana Whitfield", "titles": ["MANAGING MEMBER"] },
+      { "name": "Luis Barreto", "titles": ["MEMBER"] }
+    ],
+    "tin": {
+      "tin": "91-1847302",
+      "verified": true,
+      "issued": true,
+      "mismatch": false,
+      "name": "HARBOR LINE CONTRACTING"
+    },
+    "watchlist": { "hit_count": 0, "lists": [] },
+    "industry_classification": {
+      "categories": [
+        {
+          "name": "Commercial and Institutional Building Construction",
+          "classification_system": "NAICS",
+          "score": 0.88,
+          "naics_codes": ["236220"]
+        }
+      ]
+    },
+    "website": {
+      "url": "https://harborlinecontracting.example",
+      "status": "online",
+      "description": "Harbor Line Contracting is a Tacoma, Washington general contractor specializing in commercial tenant improvements and marine-adjacent structures.",
+      "domain": { "creation_date": "2012-02-09" }
+    },
+    "addresses": [
+      {
+        "full_address": "2215 Port of Tacoma Rd, Tacoma, WA 98421",
+        "city": "Tacoma",
+        "state": "WA"
+      }
+    ],
+    "risk_assessment": {
+      "score": 24,
+      "level": "low",
+      "title": "Long-standing Washington contractor in good standing, with a verified TIN and one lapsed foreign registration in Oregon.",
+      "indicators": { "positive": 3, "neutral": 2, "negative": 1 }
+    }
+  }
+}

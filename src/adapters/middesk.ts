@@ -100,7 +100,12 @@ export function rowsFromMiddesk(b: MiddeskBusiness): ProfileRow[] {
     rows.push({
       section: 'registration',
       label: r.state,
-      value: r.status === 'active' ? `Active · ${prettyStanding(r.sub_status)}` : r.status,
+      value:
+        r.status === 'active'
+          ? `Active · ${prettyStanding(r.sub_status)}`
+          : r.status === 'inactive'
+            ? 'Inactive'
+            : 'Unknown',
       detail: [
         r.entity_type,
         r.jurisdiction?.toLowerCase(),

@@ -9,29 +9,29 @@ import {
 } from '../adapters/middesk';
 import { summarize } from '../core/summarize';
 import type { BusinessProfile, ProfileRow, SectionId } from '../core/types';
+import { h } from '../lib/dom';
+import harbor from '../fixtures/harbor.json';
 import middeskApi from '../fixtures/middesk-api.json';
+import nimbus from '../fixtures/nimbus.json';
 
-// In the real extension this page runs at chrome-extension:// inside Chrome's
-// native side panel (a narrow full-height column). Everywhere else — dev
-// server, hosted demo — we simulate that dock so the form factor reads true.
-const IS_EXTENSION = location.protocol === 'chrome-extension:';
+// Fixture per demo business. The demo harness (and tests) select one via
+// ?business=<id>; the default is Middesk's own canonical demo company.
+const FIXTURES: Record<string, unknown> = {
+  paseo: middeskApi.business,
+  harbor: harbor.business,
+  nimbus: nimbus.business,
+};
+
+function selectedBusiness(): MiddeskBusiness {
+  const id = new URLSearchParams(location.search).get('business') ?? 'paseo';
+  return (FIXTURES[id] ?? FIXTURES['paseo']) as MiddeskBusiness;
+}
 
 const SECTION_TITLES: Record<SectionId, string> = {
   registration: 'Registration',
   federal: 'Federal',
   web: 'Web',
 };
-
-function h<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  className?: string,
-  children?: (Node | string)[],
-): HTMLElementTagNameMap[K] {
-  const el = document.createElement(tag);
-  if (className) el.className = className;
-  for (const child of children ?? []) el.append(child);
-  return el;
-}
 
 function topbar(): HTMLElement {
   return h('header', 'topbar', [h('span', 'logo'), h('h1', undefined, ['Middesk Check'])]);
@@ -110,11 +110,13 @@ function riskCard(risk: NonNullable<MiddeskBusiness['risk_assessment']>): HTMLEl
 
 function entityHeader(
   profile: BusinessProfile,
-  statusPill: string | undefined,
+  statusPill: { label: string; tone: string } | undefined,
   onNewSearch: () => void,
 ): HTMLElement {
   const top = h('div', 'entity-top', [h('h2', undefined, [profile.name])]);
-  if (statusPill) top.append(h('span', 'pill-status pill-status--low', [statusPill]));
+  if (statusPill) {
+    top.append(h('span', `pill-status pill-status--${statusPill.tone}`, [statusPill.label]));
+  }
   const card = h('section', 'card entity', [top]);
   const meta = [profile.domain, profile.location].filter(Boolean).join(' · ');
   if (meta) card.append(h('div', 'meta', [meta]));
@@ -217,19 +219,6 @@ function idleView(onVerify: () => void): HTMLElement[] {
   return [hero, ...ghostReport()];
 }
 
-/** The simulated webpage behind the dock, so the harness reads as a side panel. */
-function stage(): HTMLElement {
-  const s = h('div', 'stage');
-  const page = h('div', 'ph-page', [
-    h('div', 'ph ph--nav'),
-    h('div', 'ph ph--hero'),
-    h('div', 'ph-cols', [h('div', 'ph'), h('div', 'ph'), h('div', 'ph')]),
-    h('div', 'ph ph--block'),
-  ]);
-  s.append(page, h('p', 'stage-note', ['any business website · the panel docks beside it →']));
-  return s;
-}
-
 /**
  * In the extension, a Middesk key or proxy URL can be configured at runtime
  * via chrome.storage (never bundled — see README security posture). Absent
@@ -243,7 +232,7 @@ async function loadAccess(): Promise<MiddeskAccess | null> {
 }
 
 async function resolveBusiness(): Promise<MiddeskBusiness> {
-  const fixture = middeskApi.business as unknown as MiddeskBusiness;
+  const fixture = selectedBusiness();
   const access = await loadAccess();
   if (access) {
     // In the live product the query comes from page extraction (Phase 3);
@@ -271,11 +260,7 @@ function boot(): void {
     });
   };
 
-  const scrollTop = (): void => {
-    const dock = document.querySelector('.dock');
-    if (dock) dock.scrollTop = 0;
-    else window.scrollTo(0, 0);
-  };
+  const scrollTop = (): void => window.scrollTo(0, 0);
 
   const showIdle = (): void => {
     main.replaceChildren(...idleView(verifyFlow));
@@ -285,10 +270,15 @@ function boot(): void {
 
   const showReport = (business: MiddeskBusiness): void => {
     const profile = profileFromMiddesk(business);
-    const statusPill =
-      business.status === 'approved'
-        ? 'Approved'
-        : business.status.replace('_', ' ').replace(/^./, (ch) => ch.toUpperCase());
+    const statusPill = {
+      label: business.status.replace('_', ' ').replace(/^./, (ch) => ch.toUpperCase()),
+      tone:
+        business.status === 'approved'
+          ? 'low'
+          : business.status === 'rejected'
+            ? 'high'
+            : 'neutral',
+    };
     main.replaceChildren(
       entityHeader(profile, statusPill, showIdle),
       snapshotCard(profile.rows, business.risk_assessment?.title),
@@ -327,13 +317,7 @@ function boot(): void {
       .catch((err: unknown) => showError(err instanceof Error ? err.message : String(err)));
   };
 
-  if (IS_EXTENSION) {
-    app.append(column);
-  } else {
-    document.body.classList.add('harness');
-    app.append(h('div', 'frame', [stage(), h('div', 'dock', [column])]));
-  }
-
+  app.append(column);
   showIdle();
 }
 

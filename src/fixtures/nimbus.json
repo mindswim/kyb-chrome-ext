@@ -1,0 +1,65 @@
+{
+  "note": "Demo business #3 — the fraud-shaped case: a weeks-old Delaware payments startup with a TIN name mismatch and a potential watchlist match, so warning and failure states render. Invented values in Middesk's documented schema; the company and any resemblance are fictional.",
+  "business": {
+    "id": "biz_demo_nimbus_0000000000",
+    "name": "Nimbus Refunds, Inc.",
+    "status": "in_review",
+    "formation": {
+      "entity_type": "CORPORATION",
+      "formation_state": "DE",
+      "formation_date": "2026-06-24"
+    },
+    "registrations": [
+      {
+        "name": "NIMBUS REFUNDS, INC.",
+        "state": "DE",
+        "status": "active",
+        "sub_status": "GOOD_STANDING",
+        "entity_type": "CORPORATION",
+        "file_number": "7841233",
+        "jurisdiction": "DOMESTIC",
+        "registration_date": "2026-06-24"
+      }
+    ],
+    "people": [{ "name": "Aaron Villanova", "titles": ["PRESIDENT"] }],
+    "tin": {
+      "verified": false,
+      "issued": true,
+      "mismatch": true,
+      "name": "NIMBUS REFUND GROUP LLC"
+    },
+    "watchlist": {
+      "hit_count": 1,
+      "lists": [{ "title": "OFAC SDN", "agency": "OFAC" }]
+    },
+    "industry_classification": {
+      "categories": [
+        {
+          "name": "Financial Transactions Processing",
+          "classification_system": "NAICS",
+          "score": 0.62,
+          "naics_codes": ["522320"]
+        }
+      ]
+    },
+    "website": {
+      "url": "https://nimbusrefunds.example",
+      "status": "online",
+      "description": "Nimbus Refunds says it helps consumers recover funds from failed online purchases for an upfront processing fee.",
+      "domain": { "creation_date": "2026-07-01" }
+    },
+    "addresses": [
+      {
+        "full_address": "1201 N Orange St Ste 700, Wilmington, DE 19801",
+        "city": "Wilmington",
+        "state": "DE"
+      }
+    ],
+    "risk_assessment": {
+      "score": 78,
+      "level": "high",
+      "title": "Newly formed Delaware entity with a TIN name mismatch, a potential watchlist match and a domain registered six weeks ago.",
+      "indicators": { "positive": 1, "neutral": 2, "negative": 4 }
+    }
+  }
+}
