@@ -50,6 +50,17 @@ Design decisions worth stating:
 - **No LLM in the data path.** Parse → query → render. A row either cites a government source or shows a designed absence; the tool is hallucination-free by construction.
 - **Vanilla TypeScript, no framework.** A panel of list rows doesn't need React; reviewers can read the whole thing in one sitting.
 
+## Security posture
+
+Built to be read by a security-conscious buyer; the threat model is part of the demo.
+
+- **No secrets can exist in this codebase.** Extension bundles are world-readable, so the Middesk API key lives server-side only (`proxy` mode in `adapters/middesk.ts`). The `direct-sandbox` mode is for local demos with your own sandbox key, entered at runtime into `chrome.storage` — never bundled, never committed. (Middesk ships no npm SDK — their docs' JavaScript examples are raw REST, which is what the adapter and the future proxy speak.)
+- **XSS-safe by construction.** Every render goes through DOM `textContent` (no `innerHTML` anywhere), so strings scraped from arbitrary webpages cannot inject markup into the panel.
+- **Least privilege.** `activeTab` + `scripting` + `sidePanel` + `storage`; zero blanket host permissions; a page is read only when the user clicks the icon on that tab.
+- **Minimal egress.** Nothing leaves the browser except the entity name the user confirmed — never the URL, never page content. No analytics, no tracking, no third-party scripts.
+- **MV3 baseline.** No remote code, strict default CSP, all assets bundled; **zero runtime npm dependencies** (dev toolchain only), so there is effectively no supply chain to attack.
+- External links open with `rel="noopener"`.
+
 ## Privacy stance
 
 The only data that ever leaves the browser is the entity name the user confirms, sent to public government APIs (and, in Phase 2, one caching proxy). Never the URL, never page content, no account, no tracking. `activeTab` means zero host permissions on the sites you browse — the extension cannot see any page until you click it.

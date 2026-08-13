@@ -167,17 +167,33 @@ export function profileFromMiddesk(b: MiddeskBusiness): BusinessProfile {
 const API_BASE = 'https://api.middesk.com/v1';
 
 /**
- * Live path, dormant until a key exists. Their flow is asynchronous — create
- * a Business, their pipelines fill it — so this polls with a small budget;
- * production would listen to webhooks instead. Auth is HTTP Basic with the
- * key as username (their quickstart curl style: `-u mk_test_…:`).
+ * Access design is the security stance: extension code is world-readable, so
+ * an API key must never exist in this bundle.
+ *
+ * - `proxy` (the only shippable mode): the extension calls our own backend,
+ *   which holds the Middesk key server-side, adds caching/rate limits, and
+ *   forwards nothing but the confirmed entity name.
+ * - `direct-sandbox`: local demos only, with your own sandbox key entered at
+ *   runtime and kept in chrome.storage — never bundled, never committed.
+ *   Exists so a Middesk reviewer can wire their sandbox key and watch the
+ *   panel go live without standing up the proxy first.
+ */
+export type MiddeskAccess =
+  | { mode: 'proxy'; proxyUrl: string }
+  | { mode: 'direct-sandbox'; apiKey: string };
+
+/**
+ * Direct path against their documented REST API (Bearer auth, per
+ * docs.middesk.com/api-reference). Their flow is asynchronous — create a
+ * Business, their pipelines fill it — so this polls with a small budget;
+ * the proxy would use webhooks instead.
  */
 export async function fetchMiddeskBusiness(
   q: EntityQuery,
   apiKey: string,
 ): Promise<MiddeskBusiness> {
   const headers = {
-    Authorization: `Basic ${btoa(`${apiKey}:`)}`,
+    Authorization: `Bearer ${apiKey}`,
     'Content-Type': 'application/json',
   };
   const created = await fetch(`${API_BASE}/businesses`, {
@@ -200,18 +216,32 @@ export async function fetchMiddeskBusiness(
   return business;
 }
 
-export function createMiddeskAdapter(apiKey?: string): SourceAdapter {
+async function fetchViaProxy(q: EntityQuery, proxyUrl: string): Promise<MiddeskBusiness> {
+  const res = await fetch(`${proxyUrl.replace(/\/$/, '')}/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: q.name, domain: q.domain }),
+  });
+  if (!res.ok) throw new Error(`Verification proxy failed: HTTP ${res.status}`);
+  return (await res.json()) as MiddeskBusiness;
+}
+
+export function createMiddeskAdapter(access?: MiddeskAccess): SourceAdapter {
   return {
     id: 'middesk',
     label: 'Middesk',
     async query(q: EntityQuery): Promise<ProfileRow[]> {
-      if (!apiKey) {
+      if (!access) {
         throw new Error(
           'Middesk adapter present but not configured: their API keys are sales-gated. ' +
-            'The free-source adapters cover the public-record subset in the meantime.',
+            'The demo renders their response schema from fixtures in the meantime.',
         );
       }
-      return rowsFromMiddesk(await fetchMiddeskBusiness(q, apiKey));
+      const business =
+        access.mode === 'proxy'
+          ? await fetchViaProxy(q, access.proxyUrl)
+          : await fetchMiddeskBusiness(q, access.apiKey);
+      return rowsFromMiddesk(business);
     },
   };
 }
