@@ -22,9 +22,14 @@ const FIXTURES: Record<string, unknown> = {
   nimbus: nimbus.business,
 };
 
-function selectedBusiness(): MiddeskBusiness {
+/**
+ * Null when the current page is not a business we can resolve — the demo
+ * harness passes ?business=none for pages like a personal site, which is the
+ * honest outcome for anything that is not a registered company's website.
+ */
+function selectedBusiness(): MiddeskBusiness | null {
   const id = new URLSearchParams(location.search).get('business') ?? 'paseo';
-  return (FIXTURES[id] ?? FIXTURES['paseo']) as MiddeskBusiness;
+  return (FIXTURES[id] as MiddeskBusiness | undefined) ?? null;
 }
 
 const SECTION_TITLES: Record<SectionId, string> = {
@@ -236,8 +241,12 @@ async function loadAccess(): Promise<MiddeskAccess | null> {
   return (stored['middeskAccess'] as MiddeskAccess | undefined) ?? null;
 }
 
-async function resolveBusiness(): Promise<MiddeskBusiness> {
+async function resolveBusiness(): Promise<MiddeskBusiness | null> {
   const fixture = selectedBusiness();
+  if (!fixture) {
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    return null;
+  }
   const access = await loadAccess();
   if (access) {
     // In the live product the query comes from page extraction (Phase 3);
@@ -269,6 +278,30 @@ function boot(): void {
 
   const showIdle = (): void => {
     main.replaceChildren(...idleView(verifyFlow));
+    enter();
+    scrollTop();
+  };
+
+  const showNoResult = (): void => {
+    const retry = h('button', 'btn btn--ghost', ['Back']);
+    retry.addEventListener('click', showIdle);
+    main.replaceChildren(
+      h('section', 'card', [
+        h('div', 'section-label', ['No business found']),
+        h('p', 'errmsg', [
+          'This page does not resolve to a registered business. There is no legal entity name in ' +
+            'the page markup, and no matching Secretary of State record.',
+        ]),
+      ]),
+      h('section', 'card', [
+        h('div', 'section-label', ['What this checks']),
+        h('p', 'errmsg', [
+          'Middesk Check verifies business websites — merchants, vendors, borrowers, and other ' +
+            'counterparties. Personal sites, docs, and internal tools have nothing to verify.',
+        ]),
+      ]),
+      h('div', 'hero-actions', [retry]),
+    );
     enter();
     scrollTop();
   };
@@ -318,7 +351,7 @@ function boot(): void {
     main.querySelector('.hero')?.replaceWith(toast());
     main.querySelectorAll('.card--ghost .bar').forEach((b) => b.classList.add('bar--live'));
     resolveBusiness()
-      .then(showReport)
+      .then((business) => (business ? showReport(business) : showNoResult()))
       .catch((err: unknown) => showError(err instanceof Error ? err.message : String(err)));
   };
 

@@ -5,70 +5,181 @@ import { icon } from './icons';
 import { renderSite, SITES, type SiteSpec } from './sites';
 
 /**
- * The zero-install demo: a believable Chrome window with one tab per demo
- * business and the real panel — the actual sidepanel.html, embedded as an
- * iframe — docked on the right. The panel has no knowledge of this harness;
- * switching tabs reloads the iframe with ?business=<id>.
+ * The zero-install demo: a believable Chrome window with tabs, bookmarks, and
+ * the real panel — the actual sidepanel.html, embedded as an iframe — docked
+ * on the right. The panel has no knowledge of this harness; navigation just
+ * reloads the iframe with ?business=<id>, and `none` renders its
+ * no-business-found state, which is the honest result off-ICP.
  */
 
-let active: SiteSpec = SITES[0]!;
+interface Bookmark {
+  label: string;
+  href: string;
+  host: string;
+  color: string;
+}
+
+/** Set dressing, and a small signature: the demo author's own sites. */
+const BOOKMARKS: Bookmark[] = [
+  { label: 'juan.so', href: 'https://juan.so', host: 'juan.so', color: '#0B3139' },
+  { label: 'os.juan.so', href: 'https://os.juan.so', host: 'os.juan.so', color: '#4B7D00' },
+  { label: 'Mindswim', href: 'https://mindswim.co', host: 'mindswim.co', color: '#7C5CFF' },
+];
+
+type TabView =
+  { kind: 'business'; site: SiteSpec } | { kind: 'bookmark'; bm: Bookmark } | { kind: 'newtab' };
+
+interface Tab {
+  id: number;
+  view: TabView;
+}
+
+let nextId = 1;
+let tabs: Tab[] = SITES.map((site) => ({ id: nextId++, view: { kind: 'business', site } }));
+let activeId = tabs[0]!.id;
 let panelOpen = true;
 
-const tabButtons = new Map<string, HTMLElement>();
+const tabstrip = h('div', 'tabstrip', [h('div', 'traffic', [h('i'), h('i'), h('i')])]);
 const siteRegion = h('div', 'site-region');
 const urlText = h('span', 'url-text');
 const dock = h('aside', 'panel-dock');
+const pin = h('button', 'mdk-pin is-open');
 
-/** Set dressing, and a small signature: the demo author's own bookmarks. */
-const BOOKMARKS: { label: string; href: string; color: string }[] = [
-  { label: 'juan.so', href: 'https://juan.so', color: '#0B3139' },
-  { label: 'os.juan.so', href: 'https://os.juan.so', color: '#4B7D00' },
-  { label: 'Mindswim', href: 'https://mindswim.co', color: '#7C5CFF' },
-];
+const activeTab = (): Tab | undefined => tabs.find((t) => t.id === activeId);
 
-function mountPanel(): void {
+function titleOf(view: TabView): string {
+  if (view.kind === 'business') return view.site.tabTitle;
+  if (view.kind === 'bookmark') return view.bm.label;
+  return 'New Tab';
+}
+
+function colorOf(view: TabView): string {
+  if (view.kind === 'business') return view.site.tabDot;
+  if (view.kind === 'bookmark') return view.bm.color;
+  return '#c4c7cc';
+}
+
+function panelTargetOf(view: TabView): string {
+  return view.kind === 'business' ? view.site.id : 'none';
+}
+
+function mountPanel(businessId: string): void {
   const frame = document.createElement('iframe');
   frame.className = 'panel-frame';
   frame.title = 'Middesk Check';
-  frame.src = `sidepanel.html?business=${active.id}`;
+  frame.src = `sidepanel.html?business=${businessId}`;
   dock.replaceChildren(frame);
 }
 
-function switchSite(site: SiteSpec): void {
-  active = site;
-  for (const [id, tab] of tabButtons) tab.classList.toggle('is-active', id === site.id);
-  urlText.textContent = site.domain;
-  siteRegion.replaceChildren(renderSite(site));
+/** Chrome's new-tab shortcuts — and the way to reopen anything you closed. */
+function newTabPage(): HTMLElement {
+  const grid = h('div', 'nt-shortcuts');
+  const entries: { label: string; color: string; go: () => void }[] = [
+    ...SITES.map((site) => ({
+      label: site.brand,
+      color: site.tabDot,
+      go: () => navigate({ kind: 'business', site }),
+    })),
+    ...BOOKMARKS.map((bm) => ({
+      label: bm.label,
+      color: bm.color,
+      go: () => navigate({ kind: 'bookmark', bm }),
+    })),
+  ];
+  for (const e of entries) {
+    const tile = h('button', 'nt-tile');
+    const swatch = h('span', 'nt-swatch');
+    swatch.style.background = e.color;
+    tile.append(swatch, h('span', 'nt-label', [e.label]));
+    tile.addEventListener('click', e.go);
+    grid.append(tile);
+  }
+  const search = h('div', 'nt-search', [h('span', 'nt-search-text', ['Search or type a URL'])]);
+  return h('div', 'newtab', [h('div', 'nt-mark', ['Chrome']), search, grid]);
+}
+
+function renderContent(view: TabView): void {
+  if (view.kind === 'business') {
+    urlText.textContent = view.site.domain;
+    siteRegion.replaceChildren(renderSite(view.site));
+  } else if (view.kind === 'bookmark') {
+    urlText.textContent = view.bm.host;
+    const frame = document.createElement('iframe');
+    frame.className = 'site-frame';
+    frame.title = view.bm.label;
+    frame.src = view.bm.href;
+    siteRegion.replaceChildren(frame);
+  } else {
+    urlText.textContent = '';
+    siteRegion.replaceChildren(newTabPage());
+  }
   siteRegion.scrollTop = 0;
-  if (panelOpen) mountPanel();
 }
 
-function togglePanel(pin: HTMLElement): void {
-  panelOpen = !panelOpen;
-  pin.classList.toggle('is-open', panelOpen);
-  document.getElementById('browser')!.classList.toggle('panel-open', panelOpen);
-  if (panelOpen) mountPanel();
-  else dock.replaceChildren();
-}
+function render(): void {
+  const tab = activeTab();
+  if (!tab) return;
 
-function tabstrip(): HTMLElement {
-  const strip = h('div', 'tabstrip', [h('div', 'traffic', [h('i'), h('i'), h('i')])]);
-  for (const site of SITES) {
+  tabstrip.replaceChildren(h('div', 'traffic', [h('i'), h('i'), h('i')]));
+  for (const t of tabs) {
     const favicon = h('span', 'tab-favicon');
-    favicon.style.background = site.tabDot;
-    const tab = h('button', 'tab', [
+    favicon.style.background = colorOf(t.view);
+    const close = h('span', 'tab-close', [icon('close', 12)]);
+    close.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeTab(t.id);
+    });
+    const el = h('button', `tab${t.id === activeId ? ' is-active' : ''}`, [
       favicon,
-      h('span', 'tab-title', [site.tabTitle]),
-      h('span', 'tab-close', [icon('close', 12)]),
+      h('span', 'tab-title', [titleOf(t.view)]),
+      close,
     ]);
-    tab.addEventListener('click', () => switchSite(site));
-    tabButtons.set(site.id, tab);
-    strip.append(tab);
+    el.addEventListener('click', () => {
+      activeId = t.id;
+      render();
+    });
+    tabstrip.append(el);
   }
   const add = h('button', 'icon-btn tab-new');
   add.append(icon('add', 16));
-  strip.append(add);
-  return strip;
+  add.addEventListener('click', () => {
+    tabs.push({ id: nextId++, view: { kind: 'newtab' } });
+    activeId = tabs[tabs.length - 1]!.id;
+    render();
+  });
+  tabstrip.append(add);
+
+  renderContent(tab.view);
+  if (panelOpen) mountPanel(panelTargetOf(tab.view));
+}
+
+/** Bookmarks and shortcuts navigate the current tab, as a real browser would. */
+function navigate(view: TabView): void {
+  const tab = activeTab();
+  if (tab) tab.view = view;
+  else {
+    tabs.push({ id: nextId++, view });
+    activeId = tabs[tabs.length - 1]!.id;
+  }
+  render();
+}
+
+function closeTab(id: number): void {
+  const index = tabs.findIndex((t) => t.id === id);
+  if (index === -1) return;
+  tabs = tabs.filter((t) => t.id !== id);
+  if (!tabs.length) tabs.push({ id: nextId++, view: { kind: 'newtab' } });
+  if (activeId === id) activeId = (tabs[index] ?? tabs[tabs.length - 1]!).id;
+  render();
+}
+
+function togglePanel(): void {
+  panelOpen = !panelOpen;
+  pin.classList.toggle('is-open', panelOpen);
+  document.getElementById('browser')!.classList.toggle('panel-open', panelOpen);
+  const tab = activeTab();
+  if (panelOpen && tab) mountPanel(panelTargetOf(tab.view));
+  else dock.replaceChildren();
 }
 
 function toolbar(): HTMLElement {
@@ -85,9 +196,8 @@ function toolbar(): HTMLElement {
 
   const puzzle = h('button', 'icon-btn');
   puzzle.append(icon('extensions', 17));
-  const pin = h('button', 'mdk-pin is-open');
   pin.title = 'Middesk Check';
-  pin.addEventListener('click', () => togglePanel(pin));
+  pin.addEventListener('click', togglePanel);
   const more = h('button', 'icon-btn');
   more.append(icon('more', 17));
 
@@ -100,14 +210,12 @@ function toolbar(): HTMLElement {
 
 function bookmarksBar(): HTMLElement {
   const bar = h('div', 'bookmarks');
-  for (const { label, href, color } of BOOKMARKS) {
+  for (const bm of BOOKMARKS) {
     const dot = h('span', 'bm-dot');
-    dot.style.background = color;
-    const bm = h('a', 'bookmark', [dot, h('span', undefined, [label])]);
-    bm.href = href;
-    bm.target = '_blank';
-    bm.rel = 'noopener';
-    bar.append(bm);
+    dot.style.background = bm.color;
+    const button = h('button', 'bookmark', [dot, h('span', undefined, [bm.label])]);
+    button.addEventListener('click', () => navigate({ kind: 'bookmark', bm }));
+    bar.append(button);
   }
   return bar;
 }
@@ -115,13 +223,8 @@ function bookmarksBar(): HTMLElement {
 function boot(): void {
   const browser = document.getElementById('browser')!;
   browser.classList.add('panel-open');
-  browser.append(
-    tabstrip(),
-    toolbar(),
-    bookmarksBar(),
-    h('div', 'browser-body', [siteRegion, dock]),
-  );
-  switchSite(active);
+  browser.append(tabstrip, toolbar(), bookmarksBar(), h('div', 'browser-body', [siteRegion, dock]));
+  render();
 }
 
 boot();
