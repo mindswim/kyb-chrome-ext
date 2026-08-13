@@ -49,20 +49,20 @@ src/
 
 ```mermaid
 sequenceDiagram
-    participant P as Side panel
-    participant S as chrome.storage
-    participant X as Proxy (holds the key)
-    participant M as api.middesk.com
-    P->>S: read middeskAccess
+    participant Panel as Side panel
+    participant Storage as chrome.storage
+    participant Proxy as Key proxy
+    participant API as api.middesk.com
+    Panel->>Storage: read middeskAccess
     alt not configured
-        P->>P: render fixture (same schema)
+        Note over Panel: renders the fixture - same schema, demo latency
     else configured
-        P->>X: POST /verify { name, domain }
-        X->>M: POST /v1/businesses (Bearer)
-        M-->>X: Business (async, polled)
-        X-->>P: Business JSON
+        Panel->>Proxy: POST /verify with the entity name
+        Proxy->>API: POST /v1/businesses with a Bearer key
+        API-->>Proxy: Business record when the poll completes
+        Proxy-->>Panel: Business JSON
     end
-    P->>P: rowsFromMiddesk() → report
+    Note over Panel: rowsFromMiddesk renders the same report either way
 ```
 
 Verify checks `chrome.storage` for a `middeskAccess` config. Without one, the panel renders fixtures through the same mapper the live path uses. With one, the identical flow calls the API: Bearer auth, `POST /v1/businesses`, then polling while Middesk's pipelines fill the record (their flow is asynchronous; production would use webhooks). Field names — `registrations[].sub_status`, `tin.verified`, `website.description`, `risk_assessment.title` — were checked against their reference docs. One deliberate simplification: risk assessments are a separate resource (`GET /risk_assessments/latest`), which production fetches with a second call; the report's Snapshot headline is that resource's `title` field, their "one-sentence analyst headline."
