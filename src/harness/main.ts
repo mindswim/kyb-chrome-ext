@@ -32,10 +32,16 @@ type TabView =
 interface Tab {
   id: number;
   view: TabView;
+  /** The three business tabs are the demo — they stay put. */
+  pinned?: boolean;
 }
 
 let nextId = 1;
-let tabs: Tab[] = SITES.map((site) => ({ id: nextId++, view: { kind: 'business', site } }));
+let tabs: Tab[] = SITES.map((site) => ({
+  id: nextId++,
+  view: { kind: 'business', site },
+  pinned: true,
+}));
 let activeId = tabs[0]!.id;
 let panelOpen = true;
 
@@ -78,12 +84,12 @@ function newTabPage(): HTMLElement {
     ...SITES.map((site) => ({
       label: site.brand,
       color: site.tabDot,
-      go: () => navigate({ kind: 'business', site }),
+      go: () => focusBusiness(site),
     })),
     ...BOOKMARKS.map((bm) => ({
       label: bm.label,
       color: bm.color,
-      go: () => navigate({ kind: 'bookmark', bm }),
+      go: () => navigateHere({ kind: 'bookmark', bm }),
     })),
   ];
   for (const e of entries) {
@@ -124,16 +130,18 @@ function render(): void {
   for (const t of tabs) {
     const favicon = h('span', 'tab-favicon');
     favicon.style.background = colorOf(t.view);
-    const close = h('span', 'tab-close', [icon('close', 12)]);
-    close.addEventListener('click', (e) => {
-      e.stopPropagation();
-      closeTab(t.id);
-    });
     const el = h('button', `tab${t.id === activeId ? ' is-active' : ''}`, [
       favicon,
       h('span', 'tab-title', [titleOf(t.view)]),
-      close,
     ]);
+    if (!t.pinned) {
+      const close = h('span', 'tab-close', [icon('close', 12)]);
+      close.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeTab(t.id);
+      });
+      el.append(close);
+    }
     el.addEventListener('click', () => {
       activeId = t.id;
       render();
@@ -153,22 +161,39 @@ function render(): void {
   if (panelOpen) mountPanel(panelTargetOf(tab.view));
 }
 
-/** Bookmarks and shortcuts navigate the current tab, as a real browser would. */
-function navigate(view: TabView): void {
-  const tab = activeTab();
-  if (tab) tab.view = view;
-  else {
-    tabs.push({ id: nextId++, view });
-    activeId = tabs[tabs.length - 1]!.id;
-  }
+/** Bookmarks always open a new focused tab, never displacing a business. */
+function openInNewTab(view: TabView): void {
+  tabs.push({ id: nextId++, view });
+  activeId = tabs[tabs.length - 1]!.id;
   render();
+}
+
+/** New-tab shortcuts behave like Chrome's: they navigate the tab you are on. */
+function navigateHere(view: TabView): void {
+  const tab = activeTab();
+  if (!tab || tab.pinned) {
+    openInNewTab(view);
+    return;
+  }
+  tab.view = view;
+  render();
+}
+
+/** The businesses are always open, so their tiles focus rather than duplicate. */
+function focusBusiness(site: SiteSpec): void {
+  const existing = tabs.find((t) => t.view.kind === 'business' && t.view.site.id === site.id);
+  if (existing) {
+    activeId = existing.id;
+    render();
+    return;
+  }
+  openInNewTab({ kind: 'business', site });
 }
 
 function closeTab(id: number): void {
   const index = tabs.findIndex((t) => t.id === id);
-  if (index === -1) return;
+  if (index === -1 || tabs[index]!.pinned) return;
   tabs = tabs.filter((t) => t.id !== id);
-  if (!tabs.length) tabs.push({ id: nextId++, view: { kind: 'newtab' } });
   if (activeId === id) activeId = (tabs[index] ?? tabs[tabs.length - 1]!).id;
   render();
 }
@@ -214,7 +239,7 @@ function bookmarksBar(): HTMLElement {
     const dot = h('span', 'bm-dot');
     dot.style.background = bm.color;
     const button = h('button', 'bookmark', [dot, h('span', undefined, [bm.label])]);
-    button.addEventListener('click', () => navigate({ kind: 'bookmark', bm }));
+    button.addEventListener('click', () => openInNewTab({ kind: 'bookmark', bm }));
     bar.append(button);
   }
   return bar;
