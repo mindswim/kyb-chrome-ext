@@ -15,10 +15,16 @@ let active: SiteSpec = SITES[0]!;
 let panelOpen = true;
 
 const tabButtons = new Map<string, HTMLElement>();
-const bookmarkButtons = new Map<string, HTMLElement>();
 const siteRegion = h('div', 'site-region');
 const urlText = h('span', 'url-text');
 const dock = h('aside', 'panel-dock');
+
+/** Set dressing, and a small signature: the demo author's own bookmarks. */
+const BOOKMARKS: { label: string; href: string; color: string }[] = [
+  { label: 'juan.so', href: 'https://juan.so', color: '#0B3139' },
+  { label: 'os.juan.so', href: 'https://os.juan.so', color: '#4B7D00' },
+  { label: 'Mindswim', href: 'https://mindswim.co', color: '#7C5CFF' },
+];
 
 function mountPanel(): void {
   const frame = document.createElement('iframe');
@@ -31,7 +37,6 @@ function mountPanel(): void {
 function switchSite(site: SiteSpec): void {
   active = site;
   for (const [id, tab] of tabButtons) tab.classList.toggle('is-active', id === site.id);
-  for (const [id, bm] of bookmarkButtons) bm.classList.toggle('is-active', id === site.id);
   urlText.textContent = site.domain;
   siteRegion.replaceChildren(renderSite(site));
   siteRegion.scrollTop = 0;
@@ -95,12 +100,13 @@ function toolbar(): HTMLElement {
 
 function bookmarksBar(): HTMLElement {
   const bar = h('div', 'bookmarks');
-  for (const site of SITES) {
+  for (const { label, href, color } of BOOKMARKS) {
     const dot = h('span', 'bm-dot');
-    dot.style.background = site.tabDot;
-    const bm = h('button', 'bookmark', [dot, h('span', undefined, [site.brand])]);
-    bm.addEventListener('click', () => switchSite(site));
-    bookmarkButtons.set(site.id, bm);
+    dot.style.background = color;
+    const bm = h('a', 'bookmark', [dot, h('span', undefined, [label])]);
+    bm.href = href;
+    bm.target = '_blank';
+    bm.rel = 'noopener';
     bar.append(bm);
   }
   return bar;

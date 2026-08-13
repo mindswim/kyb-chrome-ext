@@ -189,6 +189,8 @@ export interface MatchCard {
   value: string;
   match: string;
   status: RowStatus;
+  /** Secondary line explaining a non-matching verdict. */
+  detail?: string;
   /** Full value revealed on request (e.g. every officer, not "+1 more"). */
   expandedValue?: string;
   /**
@@ -229,12 +231,32 @@ export function matchCardsFromMiddesk(b: MiddeskBusiness): MatchCard[] {
   }
 
   if (b.tin) {
-    cards.push({
-      label: 'TIN',
-      value: b.tin.tin ?? (b.tin.verified ? 'EIN found' : '—'),
-      match: b.tin.verified ? 'Match' : b.tin.mismatch ? 'Similar match' : 'Not found',
-      status: b.tin.verified ? 'success' : b.tin.mismatch ? 'warning' : 'failure',
-    });
+    // Their TIN semantics: `mismatch` means the IRS has the number but under a
+    // different legal name — a warning with a name to show, not a blank failure.
+    if (b.tin.verified) {
+      cards.push({
+        label: 'TIN',
+        value: b.tin.tin ?? 'EIN found',
+        match: 'Match',
+        status: 'success',
+      });
+    } else if (b.tin.mismatch) {
+      cards.push({
+        label: 'TIN',
+        value: b.tin.name ?? 'Name on file differs',
+        match: 'Name mismatch',
+        detail: `IRS records return a different legal name for this EIN than ${b.name}`,
+        status: 'warning',
+      });
+    } else {
+      cards.push({
+        label: 'TIN',
+        value: 'No EIN found',
+        match: 'Not found',
+        detail: 'No IRS record matches this business',
+        status: 'failure',
+      });
+    }
   }
 
   const people = b.people ?? [];
@@ -256,10 +278,12 @@ export function matchCardsFromMiddesk(b: MiddeskBusiness): MatchCard[] {
 
   if (b.watchlist) {
     const clear = b.watchlist.hit_count === 0;
+    const lists = b.watchlist.lists?.map((l) => l.title).join(', ');
     cards.push({
       label: 'Watchlists',
-      value: clear ? 'None' : `${b.watchlist.hit_count} hit(s)`,
-      match: clear ? 'No hits' : 'Hits found',
+      value: clear ? 'None' : `${b.watchlist.hit_count} potential match`,
+      match: clear ? 'No hits' : 'Review required',
+      detail: clear ? undefined : lists ? `Potential match on ${lists}` : undefined,
       status: clear ? 'success' : 'failure',
       quiet: clear,
     });

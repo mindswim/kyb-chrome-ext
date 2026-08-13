@@ -64,8 +64,7 @@ body {
 .tabstrip {
   display: flex;
   align-items: flex-end;
-  gap: 1px;
-  padding: 9px 10px 0;
+  padding: 10px 8px 0;
   background: #dee1e6;
 }
 
@@ -73,7 +72,7 @@ body {
   display: flex;
   gap: 8px;
   align-items: center;
-  padding: 0 12px 11px 4px;
+  padding: 0 14px 11px 6px;
 }
 .traffic i {
   width: 12px;
@@ -93,32 +92,53 @@ body {
 .tab {
   display: flex;
   align-items: center;
-  gap: 9px;
-  width: 232px;
-  padding: 9px 10px 9px 13px;
+  gap: 8px;
+  width: 240px;
+  height: 34px;
+  padding: 0 8px 0 12px;
   border: 0;
-  border-radius: 9px 9px 0 0;
+  border-radius: 10px 10px 0 0;
   background: transparent;
   color: #3c4043;
   cursor: default;
-  font: 12.5px/1 inherit;
+  font: 12px/1 inherit;
   position: relative;
 }
-.tab:hover {
-  background: rgba(255, 255, 255, 0.5);
+.tab:hover:not(.is-active) {
+  background: rgba(255, 255, 255, 0.45);
 }
 .tab.is-active {
   background: #fff;
   color: #202124;
+  z-index: 1;
 }
-.tab:not(.is-active)::after {
+/* Chrome's tab feet: the active tab curves outward into the toolbar. */
+.tab.is-active::before,
+.tab.is-active::after {
   content: '';
   position: absolute;
-  right: 0;
+  bottom: 0;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+}
+.tab.is-active::before {
+  left: -10px;
+  background: radial-gradient(circle at top left, transparent 10px, #fff 10px);
+}
+.tab.is-active::after {
+  right: -10px;
+  background: radial-gradient(circle at top right, transparent 10px, #fff 10px);
+}
+/* hairline separator between adjacent inactive tabs */
+.tab:not(.is-active) + .tab:not(.is-active)::before {
+  content: '';
+  position: absolute;
+  left: 0;
   top: 9px;
   bottom: 9px;
   width: 1px;
-  background: rgba(60, 64, 67, 0.22);
+  background: rgba(60, 64, 67, 0.24);
 }
 .tab-favicon {
   width: 14px;
@@ -260,14 +280,10 @@ body {
   padding: 5px 9px;
   font: 12px/1 inherit;
   color: #3c4043;
-  cursor: pointer;
+  text-decoration: none;
 }
 .bookmark:hover {
   background: rgba(60, 64, 67, 0.08);
-}
-.bookmark.is-active {
-  color: #202124;
-  font-weight: 600;
 }
 .bm-dot {
   width: 12px;

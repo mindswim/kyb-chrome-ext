@@ -70,11 +70,16 @@ function matchStack(cards: MatchCard[]): HTMLElement {
       ]),
       val,
     ]);
+    if (c.detail) row.append(h('div', 'detail', [c.detail]));
     if (c.expandedValue) {
-      const expand = h('button', 'expand', ['show all']);
+      const expand = h('button', 'expand', ['Show all']);
+      expand.setAttribute('aria-expanded', 'false');
+      let open = false;
       expand.addEventListener('click', () => {
-        val.textContent = c.expandedValue ?? c.value;
-        expand.remove();
+        open = !open;
+        val.textContent = open ? (c.expandedValue ?? c.value) : c.value;
+        expand.textContent = open ? 'Show less' : 'Show all';
+        expand.setAttribute('aria-expanded', String(open));
       });
       row.append(expand);
     }

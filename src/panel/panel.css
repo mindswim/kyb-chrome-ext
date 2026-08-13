@@ -319,8 +319,24 @@ a:focus-visible {
 .match--success::before {
   background: var(--lime);
 }
+/* Warning and failure sit close in their palette, so the shapes carry the
+   difference the way their own report does: a dashed disc vs a solid one. */
 .match--warning::before {
   background: var(--warn);
+  position: relative;
+}
+.match--warning {
+  position: relative;
+}
+.match--warning::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  width: 4px;
+  height: 1.5px;
+  background: #fff;
+  transform: translateY(-50%);
 }
 .match--failure::before {
   background: var(--bad);
@@ -337,7 +353,10 @@ a:focus-visible {
   background: none;
   border: 0;
   padding: 0;
-  margin-top: 3px;
+  margin-top: 4px;
+}
+.expand:hover {
+  color: var(--midnight);
 }
 
 /* ---------- fraud intelligence ---------- */

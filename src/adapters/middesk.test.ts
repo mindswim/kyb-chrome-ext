@@ -79,10 +79,23 @@ describe('demo fixtures', () => {
     expect(or?.status).toBe('warning');
   });
 
-  it('nimbus surfaces the failure states', () => {
-    const cards = matchCardsFromMiddesk(nimbus.business as unknown as MiddeskBusiness);
-    expect(cards.find((c) => c.label === 'TIN')?.match).toBe('Similar match');
-    expect(cards.find((c) => c.label === 'Watchlists')?.match).toBe('Hits found');
-    expect(cards.find((c) => c.label === 'Watchlists')?.quiet).toBeFalsy();
+  it('nimbus shows the conflicting IRS name rather than an empty TIN row', () => {
+    const tin = matchCardsFromMiddesk(nimbus.business as unknown as MiddeskBusiness).find(
+      (c) => c.label === 'TIN',
+    );
+    // A name mismatch is a warning with something to read, not a blank failure.
+    expect(tin?.value).toBe('NIMBUS REFUND GROUP LLC');
+    expect(tin?.match).toBe('Name mismatch');
+    expect(tin?.status).toBe('warning');
+    expect(tin?.detail).toContain('different legal name');
+  });
+
+  it('nimbus surfaces the watchlist hit for review', () => {
+    const watch = matchCardsFromMiddesk(nimbus.business as unknown as MiddeskBusiness).find(
+      (c) => c.label === 'Watchlists',
+    );
+    expect(watch?.match).toBe('Review required');
+    expect(watch?.detail).toContain('OFAC SDN');
+    expect(watch?.quiet).toBeFalsy();
   });
 });
