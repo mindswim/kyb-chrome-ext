@@ -51,4 +51,12 @@ describe('matchCardsFromMiddesk', () => {
     );
     expect(cards.find((c) => c.label === 'People')?.value).toBe('Michael Richards +1 more');
   });
+
+  it('expands people on request and quiets absence verdicts', () => {
+    expect(cards.find((c) => c.label === 'People')?.expandedValue).toBe(
+      'Michael Richards (President) · Kemi Osei (Secretary)',
+    );
+    expect(cards.find((c) => c.label === 'Watchlists')?.quiet).toBe(true);
+    expect(cards.find((c) => c.label === 'TIN')?.quiet).toBeUndefined();
+  });
 });

@@ -62,15 +62,23 @@ function sectionCards(rows: ProfileRow[]): HTMLElement[] {
 function matchStack(cards: MatchCard[]): HTMLElement {
   const card = h('section', 'card mstack', [h('div', 'section-label', ['Verification'])]);
   for (const c of cards) {
-    card.append(
-      h('div', 'mrow', [
-        h('div', 'mrow-top', [
-          h('span', 'lbl', [c.label]),
-          h('span', `match match--${c.status}`, [c.match]),
-        ]),
-        h('div', 'val', [c.value]),
+    const val = h('div', 'val', [c.value]);
+    const row = h('div', 'mrow', [
+      h('div', 'mrow-top', [
+        h('span', 'lbl', [c.label]),
+        h('span', `match match--${c.status}${c.quiet ? ' match--quiet' : ''}`, [c.match]),
       ]),
-    );
+      val,
+    ]);
+    if (c.expandedValue) {
+      const expand = h('button', 'expand', ['show all']);
+      expand.addEventListener('click', () => {
+        val.textContent = c.expandedValue ?? c.value;
+        expand.remove();
+      });
+      row.append(expand);
+    }
+    card.append(row);
   }
   return card;
 }
@@ -137,7 +145,10 @@ function ctaCard(): HTMLElement {
     ]),
   ]);
   const a = h('a', 'btn btn--lime', ['Get a demo →']);
-  a.href = 'https://www.middesk.com';
+  // Attributed link-out rather than an in-panel form: their contact page owns
+  // routing and consent, and the UTM makes the extension a measurable channel.
+  a.href =
+    'https://www.middesk.com/contact?utm_source=middesk-check&utm_medium=extension&utm_campaign=concept-demo';
   a.target = '_blank';
   a.rel = 'noopener';
   card.append(a);

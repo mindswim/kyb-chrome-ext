@@ -184,6 +184,13 @@ export interface MatchCard {
   value: string;
   match: string;
   status: RowStatus;
+  /** Full value revealed on request (e.g. every officer, not "+1 more"). */
+  expandedValue?: string;
+  /**
+   * Absence-verdicts ("No hits") render without a status dot — their light
+   * report shows them as quiet text, unlike affirmative "Match" rows.
+   */
+  quiet?: boolean;
 }
 
 export function matchCardsFromMiddesk(b: MiddeskBusiness): MatchCard[] {
@@ -225,24 +232,31 @@ export function matchCardsFromMiddesk(b: MiddeskBusiness): MatchCard[] {
     });
   }
 
-  const [firstPerson, ...morePeople] = b.people ?? [];
+  const people = b.people ?? [];
+  const [firstPerson, ...morePeople] = people;
   if (firstPerson) {
+    const title = (t: string): string => t.charAt(0) + t.slice(1).toLowerCase();
     cards.push({
       label: 'People',
       value: morePeople.length
         ? `${firstPerson.name} +${morePeople.length} more`
         : firstPerson.name,
+      expandedValue: morePeople.length
+        ? people.map((p) => `${p.name} (${p.titles.map(title).join(', ')})`).join(' · ')
+        : undefined,
       match: 'Match',
       status: 'success',
     });
   }
 
   if (b.watchlist) {
+    const clear = b.watchlist.hit_count === 0;
     cards.push({
       label: 'Watchlists',
-      value: b.watchlist.hit_count === 0 ? 'None' : `${b.watchlist.hit_count} hit(s)`,
-      match: b.watchlist.hit_count === 0 ? 'No hits' : 'Hits found',
-      status: b.watchlist.hit_count === 0 ? 'success' : 'failure',
+      value: clear ? 'None' : `${b.watchlist.hit_count} hit(s)`,
+      match: clear ? 'No hits' : 'Hits found',
+      status: clear ? 'success' : 'failure',
+      quiet: clear,
     });
   }
 
