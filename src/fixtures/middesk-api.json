@@ -47,7 +47,13 @@
       { "name": "Michael Richards", "titles": ["PRESIDENT"] },
       { "name": "Kemi Osei", "titles": ["SECRETARY"] }
     ],
-    "tin": { "verified": true, "issued": true, "mismatch": false, "name": "PASEO INC" },
+    "tin": {
+      "tin": "82-4159401",
+      "verified": true,
+      "issued": true,
+      "mismatch": false,
+      "name": "PASEO INC"
+    },
     "watchlist": { "hit_count": 0, "lists": [] },
     "industry_classification": {
       "categories": [

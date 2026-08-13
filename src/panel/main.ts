@@ -1,5 +1,10 @@
 import './panel.css';
-import { profileFromMiddesk, type MiddeskBusiness } from '../adapters/middesk';
+import {
+  matchCardsFromMiddesk,
+  profileFromMiddesk,
+  type MatchCard,
+  type MiddeskBusiness,
+} from '../adapters/middesk';
 import { pickAutoConfirm } from '../core/resolve';
 import { summarize } from '../core/summarize';
 import type { BusinessProfile, EntityCandidate, ProfileRow, SectionId } from '../core/types';
@@ -223,6 +228,22 @@ interface Controller {
   showMiddeskSample(): void;
 }
 
+function matchStack(cards: MatchCard[]): HTMLElement {
+  const wrap = h('section', 'mstack', [h('div', 'section-label', ['Verification'])]);
+  for (const c of cards) {
+    wrap.append(
+      h('div', 'mcard', [
+        h('div', 'mcard-top', [
+          h('span', 'lbl', [c.label]),
+          h('span', `match match--${c.status}`, [c.match]),
+        ]),
+        h('div', 'val', [c.value]),
+      ]),
+    );
+  }
+  return wrap;
+}
+
 function apiNote(): HTMLElement {
   return h('section', 'card api-note', [
     'Rendered from a verbatim Middesk Business response — their documented schema, invented ' +
@@ -310,12 +331,16 @@ function boot(): void {
       else showCandidates();
     },
     showMiddeskSample: () => {
-      const profile = profileFromMiddesk(middeskApi.business as unknown as MiddeskBusiness);
+      const business = middeskApi.business as unknown as MiddeskBusiness;
+      const profile = profileFromMiddesk(business);
       main.replaceChildren(
         entityHeader(profile, () => ctl.showIdle(), 'a Middesk API response (fixture)'),
         apiNote(),
         snapshotCard(profile.rows),
-        ...sectionCards(profile.rows),
+        matchStack(matchCardsFromMiddesk(business)),
+        // TIN and watchlists live in the stack above; the remaining sections
+        // add the per-state and web detail beneath it.
+        ...sectionCards(profile.rows.filter((r) => r.section !== 'federal')),
       );
     },
   };

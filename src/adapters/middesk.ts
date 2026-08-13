@@ -1,4 +1,10 @@
-import type { BusinessProfile, EntityQuery, ProfileRow, SourceAdapter } from '../core/types';
+import type {
+  BusinessProfile,
+  EntityQuery,
+  ProfileRow,
+  RowStatus,
+  SourceAdapter,
+} from '../core/types';
 
 /**
  * The production seam.
@@ -34,7 +40,13 @@ export interface MiddeskBusiness {
   formation?: { entity_type?: string; formation_state?: string; formation_date?: string };
   registrations: MiddeskRegistration[];
   people?: { name: string; titles: string[] }[];
-  tin?: { verified: boolean; issued?: boolean; mismatch?: boolean; name?: string } | null;
+  tin?: {
+    tin?: string;
+    verified: boolean;
+    issued?: boolean;
+    mismatch?: boolean;
+    name?: string;
+  } | null;
   watchlist?: { hit_count: number; lists?: { title: string; agency: string }[] } | null;
   industry_classification?: {
     categories?: {
@@ -151,6 +163,74 @@ export function rowsFromMiddesk(b: MiddeskBusiness): ProfileRow[] {
   }
 
   return rows;
+}
+
+/**
+ * The verification stack — a clone of the field-card grammar in Middesk's own
+ * report UI (label on top, value large, match verdict with a status dot at
+ * top right). Vocabulary is theirs: "Match", "Similar match", "Not found".
+ */
+export interface MatchCard {
+  label: string;
+  value: string;
+  match: string;
+  status: RowStatus;
+}
+
+export function matchCardsFromMiddesk(b: MiddeskBusiness): MatchCard[] {
+  const cards: MatchCard[] = [];
+  cards.push({ label: 'Business name', value: b.name, match: 'Match', status: 'success' });
+
+  const addr = b.addresses?.[0];
+  if (addr?.full_address) {
+    cards.push({ label: 'Office address', value: addr.full_address, match: 'Match', status: 'success' });
+  }
+
+  if (b.registrations.length) {
+    const domestic = b.registrations.some((r) => r.jurisdiction === 'DOMESTIC');
+    const foreign = b.registrations.some((r) => r.jurisdiction === 'FOREIGN');
+    cards.push({
+      label: 'SOS Filings',
+      value:
+        domestic && foreign
+          ? 'Domestic and Foreign filings found'
+          : domestic
+            ? 'Domestic filings found'
+            : 'Foreign filings found',
+      match: 'Match',
+      status: 'success',
+    });
+  }
+
+  if (b.tin) {
+    cards.push({
+      label: 'TIN',
+      value: b.tin.tin ?? (b.tin.verified ? 'EIN found' : '—'),
+      match: b.tin.verified ? 'Match' : b.tin.mismatch ? 'Similar match' : 'Not found',
+      status: b.tin.verified ? 'success' : b.tin.mismatch ? 'warning' : 'failure',
+    });
+  }
+
+  const [firstPerson, ...morePeople] = b.people ?? [];
+  if (firstPerson) {
+    cards.push({
+      label: 'People',
+      value: morePeople.length ? `${firstPerson.name} +${morePeople.length} more` : firstPerson.name,
+      match: 'Match',
+      status: 'success',
+    });
+  }
+
+  if (b.watchlist) {
+    cards.push({
+      label: 'Watchlists',
+      value: b.watchlist.hit_count === 0 ? 'None' : `${b.watchlist.hit_count} hit(s)`,
+      match: b.watchlist.hit_count === 0 ? 'No hits' : 'Hits found',
+      status: b.watchlist.hit_count === 0 ? 'success' : 'failure',
+    });
+  }
+
+  return cards;
 }
 
 export function profileFromMiddesk(b: MiddeskBusiness): BusinessProfile {
