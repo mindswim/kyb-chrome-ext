@@ -1,0 +1,51 @@
+{
+  "note": "The honest failure case: a Delaware company in a non-covered operating state. Exercises empty states and the gap-as-pitch grammar.",
+  "candidates": [
+    { "name": "Vantis Labs, Inc.", "origin": "footer", "confidence": 0.61 },
+    { "name": "Vantis", "origin": "title", "confidence": 0.22 }
+  ],
+  "profile": {
+    "name": "Vantis Labs, Inc.",
+    "domain": "vantis.example",
+    "location": "Wilmington, DE",
+    "fetchedAt": "2026-08-13T17:25:00Z",
+    "rows": [
+      {
+        "section": "registration",
+        "label": "Delaware",
+        "value": "Not published by state",
+        "detail": "Delaware exposes no public API or bulk data. Middesk covers it.",
+        "status": "locked"
+      },
+      {
+        "section": "registration",
+        "label": "Covered states",
+        "value": "No registrations found",
+        "detail": "Searched CO, NY, CT, OR, TX, FL open data",
+        "status": "neutral"
+      },
+      {
+        "section": "federal",
+        "label": "SEC EDGAR",
+        "value": "No filings found",
+        "status": "neutral",
+        "source": { "label": "SEC EDGAR" }
+      },
+      {
+        "section": "federal",
+        "label": "Sanctions",
+        "value": "No hits",
+        "status": "success",
+        "source": { "label": "Trade.gov CSL" }
+      },
+      {
+        "section": "web",
+        "label": "Domain",
+        "value": "Registered 6 weeks ago",
+        "detail": "vantis.example · created 2026-07-01 — young domain, site claims founded 2019",
+        "status": "failure",
+        "source": { "label": "RDAP" }
+      }
+    ]
+  }
+}

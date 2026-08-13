@@ -1,0 +1,24 @@
+{
+  "name": "middesk-check",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Concept demo: a Chrome side-panel that shows a public-record snapshot of the business behind the site you're on, in Middesk's design language.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "lint": "eslint src",
+    "format": "prettier --write \"src/**/*.{ts,css,json}\" \"*.{ts,md,json,html}\""
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.280",
+    "eslint": "^9.9.0",
+    "prettier": "^3.3.0",
+    "typescript": "^5.5.0",
+    "typescript-eslint": "^8.0.0",
+    "vite": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}
