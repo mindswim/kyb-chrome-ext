@@ -400,6 +400,13 @@ a:focus-visible {
   color: var(--midnight-80);
 }
 
+.api-note {
+  font: 11.5px/1.6 var(--mono);
+  color: var(--midnight-80);
+  background: var(--wash);
+  border-color: transparent;
+}
+
 /* ---------- rows ---------- */
 .row {
   display: grid;

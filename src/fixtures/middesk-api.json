@@ -1,0 +1,71 @@
+{
+  "note": "A Business response in Middesk's documented schema (docs.middesk.com/reference/business) with invented values — input for the demo's ingestion path. Field names and enums are theirs; 'Paseo, Inc.' is Middesk's own recurring fictional demo company. Nothing here is real data.",
+  "business": {
+    "id": "biz_demo_paseo_0000000000",
+    "name": "Paseo, Inc.",
+    "status": "approved",
+    "formation": {
+      "entity_type": "CORPORATION",
+      "formation_state": "WA",
+      "formation_date": "2014-06-02"
+    },
+    "registrations": [
+      {
+        "name": "PASEO, INC.",
+        "state": "WA",
+        "status": "active",
+        "sub_status": "GOOD_STANDING",
+        "status_details": "Active",
+        "entity_type": "CORPORATION",
+        "file_number": "604112233",
+        "jurisdiction": "DOMESTIC",
+        "registration_date": "2014-06-02",
+        "officers": [{ "name": "Michael Richards", "roles": ["PRESIDENT"] }]
+      },
+      {
+        "name": "PASEO, INC.",
+        "state": "CO",
+        "status": "active",
+        "sub_status": "GOOD_STANDING",
+        "entity_type": "CORPORATION",
+        "file_number": "20161178402",
+        "jurisdiction": "FOREIGN",
+        "registration_date": "2016-03-11"
+      },
+      {
+        "name": "PASEO, INC.",
+        "state": "DE",
+        "status": "active",
+        "sub_status": "GOOD_STANDING",
+        "entity_type": "CORPORATION",
+        "file_number": "5512345",
+        "jurisdiction": "FOREIGN",
+        "registration_date": "2018-01-09"
+      }
+    ],
+    "people": [
+      { "name": "Michael Richards", "titles": ["PRESIDENT"] },
+      { "name": "Kemi Osei", "titles": ["SECRETARY"] }
+    ],
+    "tin": { "verified": true, "issued": true, "mismatch": false, "name": "PASEO INC" },
+    "watchlist": { "hit_count": 0, "lists": [] },
+    "industry_classification": {
+      "categories": [
+        {
+          "name": "Food Product Machinery Manufacturing",
+          "classification_system": "NAICS",
+          "score": 0.91,
+          "naics_codes": ["333241"]
+        }
+      ]
+    },
+    "website": {
+      "url": "https://paseo.example",
+      "status": "online",
+      "domain": { "creation_date": "2014-05-20" }
+    },
+    "addresses": [
+      { "full_address": "411 Fremont Ave N, Seattle, WA 98103", "city": "Seattle", "state": "WA" }
+    ]
+  }
+}

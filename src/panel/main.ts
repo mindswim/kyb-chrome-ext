@@ -1,7 +1,9 @@
 import './panel.css';
+import { profileFromMiddesk, type MiddeskBusiness } from '../adapters/middesk';
 import { pickAutoConfirm } from '../core/resolve';
 import { summarize } from '../core/summarize';
 import type { BusinessProfile, EntityCandidate, ProfileRow, SectionId } from '../core/types';
+import middeskApi from '../fixtures/middesk-api.json';
 import paseo from '../fixtures/paseo.json';
 import thin from '../fixtures/thin.json';
 
@@ -218,6 +220,15 @@ interface Controller {
   showIdle(): void;
   showLoading(): void;
   showFixture(key: string): void;
+  showMiddeskSample(): void;
+}
+
+function apiNote(): HTMLElement {
+  return h('section', 'card api-note', [
+    'Rendered from a verbatim Middesk Business response — their documented schema, invented ' +
+      'values. With an API key, adapters/middesk.ts fills this live. Nothing is locked here ' +
+      'because this is the full record.',
+  ]);
 }
 
 function idleView(ctl: Controller): HTMLElement[] {
@@ -229,7 +240,8 @@ function idleView(ctl: Controller): HTMLElement[] {
   ]);
   const buttons = h('div', 'confirm-row samples');
   const entries: [string, () => void][] = [
-    ['Paseo, Inc. sample', () => ctl.showFixture('paseo')],
+    ['Full record · API schema', () => ctl.showMiddeskSample()],
+    ['Public-records sample', () => ctl.showFixture('paseo')],
     ['Thin-data sample', () => ctl.showFixture('thin')],
     ['Loading state', () => ctl.showLoading()],
   ];
@@ -259,6 +271,7 @@ function devStrip(ctl: Controller): HTMLElement {
   const strip = h('nav', 'devstrip');
   const entries: [string, () => void][] = [
     ['home', () => ctl.showIdle()],
+    ['api', () => ctl.showMiddeskSample()],
     ['paseo', () => ctl.showFixture('paseo')],
     ['thin', () => ctl.showFixture('thin')],
     ['loading', () => ctl.showLoading()],
@@ -295,6 +308,15 @@ function boot(): void {
         main.replaceChildren(candidatesCard(f.candidates, () => showProfile()));
       if (auto) showProfile(ORIGIN_LABELS[auto.origin]);
       else showCandidates();
+    },
+    showMiddeskSample: () => {
+      const profile = profileFromMiddesk(middeskApi.business as unknown as MiddeskBusiness);
+      main.replaceChildren(
+        entityHeader(profile, () => ctl.showIdle(), 'a Middesk API response (fixture)'),
+        apiNote(),
+        snapshotCard(profile.rows),
+        ...sectionCards(profile.rows),
+      );
     },
   };
 

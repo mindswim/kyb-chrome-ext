@@ -25,6 +25,15 @@ export function summarize(rows: ProfileRow[]): string {
   if (sanctions)
     parts.push(sanctions.status === 'success' ? 'no sanctions hits' : `sanctions: ${sanctions.value}`);
 
+  const tin = rows.find((r) => r.label === 'TIN Match');
+  if (tin) parts.push(tin.status === 'success' ? 'TIN verified' : `TIN: ${tin.value.toLowerCase()}`);
+
+  const watchlists = rows.find((r) => r.label === 'Watchlists');
+  if (watchlists)
+    parts.push(
+      watchlists.status === 'success' ? 'no watchlist hits' : `watchlists: ${watchlists.value}`,
+    );
+
   const domain = rows.find((r) => r.label === 'Domain');
   if (domain)
     parts.push(

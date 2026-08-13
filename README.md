@@ -6,10 +6,11 @@ A Chrome side-panel that answers *"is this company real?"* without leaving the p
 
 ## Status
 
-- [x] **Phase 1 — UI shell.** Side panel + fixture harness, full design-token treatment, all row states (success / warning / failure / neutral / locked), candidate-confirm flow, loading & empty states.
-- [ ] **Phase 2 — live data.** On-click page extraction (`activeTab`), source adapters (SEC EDGAR, CO/NY/CT/OR/TX open data, OFAC/CSL sanctions, FinCEN MSB, GLEIF, RDAP), Cloudflare Worker for the one keyed source + pre-baked indexes.
-- [ ] **Phase 2.5 — hosted web demo.** The panel is a plain web page, so the same build deploys as a zero-install demo link (fetches route through the Worker where CORS requires it). Extension = the real artifact; link = what you can put in an email.
-- [ ] **Phase 3 — demo polish.** Florida index, PDF snapshot, Business-Connections teaser, rehearsed demo script.
+- [x] **Phase 1 — UI shell.** Side panel + fixture harness, full design-token treatment, all row states (success / warning / failure / neutral / locked), ambiguity-gated confirm, loading & empty states.
+- [x] **Phase 1.5 — Middesk-schema ingestion path.** `fixtures/middesk-api.json` is a Business response in their documented schema, rendered through the same `rowsFromMiddesk()` mapper the live fetch uses; `fetchMiddeskBusiness()` is implemented and dormant behind a key.
+- [ ] **Phase 2 — product-fidelity widgets.** Clone the widgets visible in their own product imagery (`reference/`, gitignored): SoS stat tiles, Insights grammar, Signal-style score, Business-Connections teaser.
+- [ ] **Phase 2.5 — hosted web demo.** The panel is a plain web page, so the same build deploys as a zero-install demo link.
+- [ ] **Phase 3 — optional live public-record adapters.** The public-launch path from the GTM proposal (EDGAR, state open data, OFAC/CSL, FinCEN MSB, GLEIF, RDAP + a small Worker); not required for the interview demo.
 
 ## Run it
 
