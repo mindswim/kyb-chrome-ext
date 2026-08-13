@@ -1,8 +1,10 @@
 # Middesk Check
 
-A Chrome side-panel that answers *"is this company real?"* without leaving the page: it identifies the legal entity behind the business website you're on, you confirm the match, and it renders a public-record snapshot — registration status, SEC presence, sanctions screen, domain age — every row linked to its government source.
+A Chrome side-panel that answers *"is this company real?"* without leaving the page: click the toolbar icon on any business website and the panel returns a verification report — registration status by state, TIN match, watchlists, officers, fraud indicators, web presence — in Middesk's own report grammar.
 
-**Concept demo by a candidate. Not affiliated with Middesk.** It borrows Middesk's design language deliberately: the concept is a free GTM surface for their paid KYB platform, so the panel is built to read like a detached window of their product. Rows only the paid API can fill (TIN match, all-50-state coverage, liens, Business Connections) render as locked rows — the funnel, visible in the UI.
+**Concept demo by a candidate. Not affiliated with Middesk.** It borrows their design language deliberately: the concept is a free GTM surface for their paid KYB platform, so the panel is built to read like a detached window of their product, and everything deeper than core verification (liens, connections, monitoring) links out to a demo request.
+
+![The demo browser](docs/demo-harbor.jpg)
 
 ## Status
 
@@ -14,37 +16,45 @@ A Chrome side-panel that answers *"is this company real?"* without leaving the p
 
 ## Run it
 
+**The demo browser** — a believable Chrome window with three business sites and the panel docked beside them, no install required:
+
 ```sh
 npm install
-npm run dev          # then open http://localhost:5173/sidepanel.html?fixture=paseo
+npm run build:demo && npm run preview:demo   # http://localhost:4174/harness.html
 ```
 
-The dock harness simulates Chrome's side panel next to a mock webpage; click **Verify this business** to play the flow (verifying toast → full report).
+Switch tabs or bookmarks to change business, then click **Verify this business** to play the flow (verifying toast → full report). `dist-demo/` is a static bundle, deployable anywhere as a shareable link.
 
-**As the real side panel:** `npm run build`, then chrome://extensions → enable Developer mode → Load unpacked → select `dist/` → click the Middesk Check toolbar icon on any tab. The panel opens with sample-data buttons until Phase 2 wires live sources. After code changes: rebuild, then hit ↻ on the extension card.
+**As the real extension:** `npm run build`, then chrome://extensions → enable Developer mode → Load unpacked → select `dist/` → click the Middesk Check toolbar icon on any tab. After code changes: rebuild, then hit ↻ on the extension card.
 
-![Confirmed profile view](docs/panel-profile.jpg)
+| The three demo businesses | |
+|---|---|
+| **Paseo, Inc.** — established Seattle manufacturer | Approved · clean report |
+| **Harbor Line Contracting LLC** — Tacoma general contractor | Approved · one lapsed foreign registration |
+| **Nimbus Refunds, Inc.** — six-week-old Delaware merchant | In review · TIN mismatch, watchlist hit, young domain |
 
 ## Architecture
 
 ```
-page (on click, activeTab only)
-  └─ extractor: schema.org Organization → footer © line → ToS naming
-       └─ side panel: candidates + confidence → USER CONFIRMS
-            └─ service worker: fan-out over source adapters (Promise.allSettled)
-                 ├─ adapters/edgar      SEC submissions + full-text (keyless, public domain)
-                 ├─ adapters/socrata    CO · NY · CT · OR · TX registries (keyless open data)
-                 ├─ adapters/csl        Trade.gov consolidated sanctions (key → Worker)
-                 ├─ adapters/msb        FinCEN MSB registrants (pre-baked index)
-                 ├─ adapters/gleif      LEI + parent/child relationships (CC0)
-                 ├─ adapters/rdap       domain registration date (keyless)
-                 └─ adapters/middesk    ← the production seam (see below)
-                      └─ renderer: normalized ProfileRow[] → sectioned card
+src/
+  panel/      the extension: side-panel UI, zero knowledge of the harness
+  adapters/   middesk.ts — API types, mappers, live fetch (the production seam)
+  core/       types + the snapshot-headline generator (pure, tested)
+  fixtures/   one Business response per demo company, in their documented schema
+  harness/    demo-only: fake Chrome window, three themed sites, Material icons
+  lib/        the one shared helper (DOM builder)
+
+Verify ──► resolveBusiness()
+             ├─ middeskAccess in chrome.storage?  → real API via adapters/middesk
+             └─ otherwise                          → fixture, with demo latency
+                    └─ rowsFromMiddesk() / matchCardsFromMiddesk()  ← same mappers either way
+                         └─ panel renders sections
 ```
 
 Design decisions worth stating:
 
-- **`adapters/middesk.ts` exists from day one, typed against Middesk's documented API shapes, deliberately inert.** The free-source fleet exists because Middesk's API is sales-gated; if a key is wired in, one `POST /v1/businesses` replaces all of it. The adapter interface is the pitch, in code.
+- **The panel is the product; the harness is scenery.** `npm run build` emits only the extension — the fake browser lives in a separate `dist-demo` build and embeds `sidepanel.html` in an iframe. Nothing demo-specific ships in the extension.
+- **`adapters/middesk.ts` is typed against their documented API and wired for live calls.** With no key configured, the panel renders the fixture through the same mapper; configure `middeskAccess` and the identical flow calls the real API. The seam is the pitch, in code.
 - **Status vocabulary mirrors Middesk's review tasks** (`success`/`warning`/`failure`) so their API maps in without renames.
 - **Demo scope is one polished flow** — verify → report — pinned to core verification, with a click-out CTA for everything deeper (liens, connections, monitoring). The page-extraction and candidate-confirm flow from the GTM proposal returns with the live adapters in Phase 3 (its earlier implementation lives in git history).
 - **No LLM in the data path.** Parse → query → render. A row either cites a government source or shows a designed absence; the tool is hallucination-free by construction.
