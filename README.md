@@ -47,22 +47,15 @@ src/
 
 ## Connecting the real API
 
-```mermaid
-sequenceDiagram
-    participant P as Side panel
-    participant S as chrome.storage
-    participant X as Proxy (holds the key)
-    participant M as api.middesk.com
-    P->>S: read middeskAccess
-    alt not configured
-        P->>P: render fixture (same schema)
-    else configured
-        P->>X: POST /verify { name, domain }
-        X->>M: POST /v1/businesses (Bearer)
-        M-->>X: Business (async, polled)
-        X-->>P: Business JSON
-    end
-    P->>P: rowsFromMiddesk() → report
+```
+Verify
+ └─ read middeskAccess from chrome.storage
+     ├─ not configured → render the fixture (same schema, demo latency)
+     └─ configured     → proxy, which holds the key
+                          └─ POST /v1/businesses (Bearer) → api.middesk.com
+                               └─ poll while their pipelines fill the record
+                          ← Business JSON
+         → rowsFromMiddesk() → the same report either way
 ```
 
 Verify checks `chrome.storage` for a `middeskAccess` config. Without one, the panel renders fixtures through the same mapper the live path uses. With one, the identical flow calls the API: Bearer auth, `POST /v1/businesses`, then polling while Middesk's pipelines fill the record (their flow is asynchronous; production would use webhooks). Field names — `registrations[].sub_status`, `tin.verified`, `website.description`, `risk_assessment.title` — were checked against their reference docs. One deliberate simplification: risk assessments are a separate resource (`GET /risk_assessments/latest`), which production fetches with a second call; the report's Snapshot headline is that resource's `title` field, their "one-sentence analyst headline."
