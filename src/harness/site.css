@@ -430,11 +430,12 @@
 /* ---------- logos ---------- */
 .s-logos {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 28px;
-  flex-wrap: wrap;
-  padding-block: 26px;
+  gap: 16px;
+  padding-block: 30px;
   border-block: 1px solid var(--s-line);
+  text-align: center;
 }
 .s-logos-label {
   font-size: 11.5px;
@@ -444,7 +445,9 @@
 }
 .s-logos-row {
   display: flex;
-  gap: 30px;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(24px, 4vw, 48px);
   flex-wrap: wrap;
 }
 .s-logo {
@@ -592,6 +595,24 @@
   border-radius: 50%;
   background: var(--s-media);
   flex: none;
+}
+
+/* In the centered treatments the attribution text — not the text-plus-avatar
+   pair — has to sit on the same axis as the stars and the quote, so the
+   avatar hangs outside the centered block. */
+.site--paseo .s-quote-who,
+.site--nimbus .s-quote-who {
+  display: block;
+  position: relative;
+  text-align: center;
+}
+.site--paseo .s-quote-who .s-avatar,
+.site--nimbus .s-quote-who .s-avatar {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 14px;
 }
 
 /* ---------- cta band ---------- */
