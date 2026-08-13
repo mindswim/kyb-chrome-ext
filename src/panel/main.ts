@@ -13,6 +13,11 @@ const FIXTURES: Record<string, Fixture> = {
   thin: thin as unknown as Fixture,
 };
 
+// In the real extension this page runs at chrome-extension:// inside Chrome's
+// native side panel (a narrow full-height column). Everywhere else — dev
+// server, hosted demo — we simulate that dock so the form factor reads true.
+const IS_EXTENSION = location.protocol === 'chrome-extension:';
+
 const SECTION_TITLES: Record<SectionId, string> = {
   registration: 'Registration',
   federal: 'Federal',
@@ -166,77 +171,126 @@ function loadingView(): HTMLElement[] {
   return [card];
 }
 
-function idleView(): HTMLElement[] {
-  const card = h('section', 'card idle', [
-    h('p', undefined, [
-      'Open this panel on a business website to identify the company behind it. ' +
-        'Live page scanning lands in Phase 2 — until then, preview with sample data:',
-    ]),
-  ]);
-  const buttons = h('div', 'confirm-row');
-  for (const [label, search] of [
-    ['Paseo, Inc. (healthy)', '?fixture=paseo'],
-    ['Vantis Labs (thin)', '?fixture=thin'],
-    ['Loading state', '?fixture=paseo&state=loading'],
-  ] as const) {
-    const b = h('button', 'btn btn--ghost', [label]);
-    // Navigating our own page URL keeps this working identically in the web
-    // harness and inside the real chrome-extension:// side panel.
-    b.addEventListener('click', () => (location.search = search));
-    buttons.append(b);
-  }
-  card.append(buttons);
-  return [card];
+/** Ghosted preview of the report shape — the "empty" state teaches the output. */
+function ghostPreview(): HTMLElement[] {
+  const widths: Record<SectionId, number[]> = {
+    registration: [120, 88, 104],
+    federal: [96, 128],
+    web: [110, 80],
+  };
+  return (Object.keys(widths) as SectionId[]).map((s) => {
+    const card = h('section', 'card card--ghost', [
+      h('div', 'section-label', [SECTION_TITLES[s]]),
+    ]);
+    for (const w of widths[s]) {
+      const row = h('div', 'row row--ghost');
+      const label = h('span', 'bar');
+      label.style.width = '56px';
+      const value = h('span', 'bar');
+      value.style.width = `${w}px`;
+      row.append(label, value, h('span', 'st st--neutral'));
+      card.append(row);
+    }
+    return card;
+  });
 }
 
-function devStrip(): HTMLElement {
+interface Controller {
+  showIdle(): void;
+  showLoading(): void;
+  showFixture(key: string): void;
+}
+
+function idleView(ctl: Controller): HTMLElement[] {
+  const hero = h('section', 'hero', [
+    h('h2', undefined, ['Know the business behind any site.']),
+    h('p', undefined, [
+      'Registration status, filings, sanctions, domain age — public records, every row cited.',
+    ]),
+  ]);
+  const buttons = h('div', 'confirm-row samples');
+  const entries: [string, () => void][] = [
+    ['Paseo, Inc. sample', () => ctl.showFixture('paseo')],
+    ['Thin-data sample', () => ctl.showFixture('thin')],
+    ['Loading state', () => ctl.showLoading()],
+  ];
+  for (const [label, fn] of entries) {
+    const b = h('button', 'btn btn--ghost', [label]);
+    b.addEventListener('click', fn);
+    buttons.append(b);
+  }
+  hero.append(buttons, h('p', 'note', ['Live page scan arrives in Phase 2 — previews below.']));
+  return [hero, ...ghostPreview()];
+}
+
+/** The simulated webpage behind the dock, so the harness reads as a side panel. */
+function stage(): HTMLElement {
+  const s = h('div', 'stage');
+  const page = h('div', 'ph-page', [
+    h('div', 'ph ph--nav'),
+    h('div', 'ph ph--hero'),
+    h('div', 'ph-cols', [h('div', 'ph'), h('div', 'ph'), h('div', 'ph')]),
+    h('div', 'ph ph--block'),
+  ]);
+  s.append(page, h('p', 'stage-note', ['any business website · the panel docks beside it →']));
+  return s;
+}
+
+function devStrip(ctl: Controller): HTMLElement {
   const strip = h('nav', 'devstrip');
-  for (const [label, href] of [
-    ['paseo', '?fixture=paseo'],
-    ['thin', '?fixture=thin'],
-    ['loading', '?fixture=paseo&state=loading'],
-  ] as const) {
-    const a = h('a', undefined, [label]);
-    a.href = href;
-    strip.append(a);
+  const entries: [string, () => void][] = [
+    ['home', () => ctl.showIdle()],
+    ['paseo', () => ctl.showFixture('paseo')],
+    ['thin', () => ctl.showFixture('thin')],
+    ['loading', () => ctl.showLoading()],
+  ];
+  for (const [label, fn] of entries) {
+    const b = h('button', 'devlink', [label]);
+    b.addEventListener('click', fn);
+    strip.append(b);
   }
   return strip;
 }
 
-function render(): void {
+function boot(): void {
   const app = document.getElementById('app')!;
-  app.replaceChildren(topbar());
+  const column = h('div', 'col');
   const main = h('main');
-  app.append(main);
+  const footer = h('footer', 'panel-footer', [disclaimer()]);
+
+  const ctl: Controller = {
+    showIdle: () => main.replaceChildren(...idleView(ctl)),
+    showLoading: () => main.replaceChildren(...loadingView()),
+    showFixture: (key: string) => {
+      const f = FIXTURES[key];
+      if (!f) return;
+      const showProfile = () =>
+        main.replaceChildren(
+          entityHeader(f.profile, showCandidates),
+          ...sectionCards(f.profile.rows),
+          lockedBlock(),
+        );
+      const showCandidates = () =>
+        main.replaceChildren(candidatesCard(f.candidates, showProfile));
+      showCandidates();
+    },
+  };
+
+  column.append(topbar(), main, footer);
+
+  if (IS_EXTENSION) {
+    app.append(column);
+  } else {
+    document.body.classList.add('harness');
+    footer.append(devStrip(ctl));
+    app.append(h('div', 'frame', [stage(), h('div', 'dock', [column])]));
+  }
 
   const params = new URLSearchParams(location.search);
-  const fixture = params.get('fixture') ? FIXTURES[params.get('fixture')!] : undefined;
-
-  if (!fixture) {
-    idleView().forEach((el) => main.append(el));
-    return;
-  }
-  if (params.get('state') === 'loading') {
-    loadingView().forEach((el) => main.append(el));
-    main.append(disclaimer());
-    app.append(devStrip());
-    return;
-  }
-
-  const showProfile = () => {
-    main.replaceChildren(
-      entityHeader(fixture.profile, showCandidates),
-      ...sectionCards(fixture.profile.rows),
-      lockedBlock(),
-      disclaimer(),
-    );
-  };
-  const showCandidates = () => {
-    main.replaceChildren(candidatesCard(fixture.candidates, showProfile), disclaimer());
-  };
-
-  showCandidates();
-  app.append(devStrip());
+  const key = params.get('fixture');
+  if (params.get('state') === 'loading') ctl.showLoading();
+  else if (key && key in FIXTURES) ctl.showFixture(key);
+  else ctl.showIdle();
 }
 
-render();
+boot();

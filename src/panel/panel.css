@@ -20,6 +20,7 @@
   --serif: Georgia, 'Times New Roman', serif;
   --sans: system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --panel-w: 392px;
 }
 
 * {
@@ -31,9 +32,102 @@ body {
   background: var(--snow);
   color: var(--midnight);
   font: 14px/1.5 var(--sans);
-  min-width: 320px;
-  max-width: 480px;
-  margin-inline: auto;
+}
+
+/* ---------- the panel column (the real UI in both contexts) ---------- */
+.col {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+main {
+  flex: 1;
+  padding: 14px 14px 20px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.panel-footer {
+  margin-top: auto;
+  padding: 0 16px 14px;
+}
+
+/* ---------- harness: simulate Chrome's side panel dock ---------- */
+/* Only active outside chrome-extension:// — a faux webpage on the left,
+   the panel docked at its real width on the right. */
+.harness .frame {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--panel-w);
+  min-height: 100dvh;
+}
+
+.stage {
+  background: #eceff0;
+  padding: 28px clamp(20px, 5vw, 64px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-right: 1px solid var(--border);
+}
+
+.ph-page {
+  display: grid;
+  gap: 14px;
+  opacity: 0.75;
+}
+.ph {
+  background: #fff;
+  border: 1px solid #dfe5e6;
+  border-radius: 10px;
+  min-height: 88px;
+}
+.ph--nav {
+  min-height: 48px;
+}
+.ph--hero {
+  min-height: 180px;
+}
+.ph--block {
+  min-height: 140px;
+}
+.ph-cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.stage-note {
+  margin-top: auto;
+  text-align: center;
+  font: 11.5px var(--mono);
+  color: var(--slate);
+  letter-spacing: 0.04em;
+}
+
+.dock {
+  height: 100dvh;
+  overflow-y: auto;
+  background: var(--snow);
+  box-shadow: -10px 0 28px rgba(11, 49, 57, 0.07);
+}
+.dock .col {
+  min-height: 100%;
+}
+
+@media (max-width: 760px) {
+  .harness .frame {
+    grid-template-columns: 1fr;
+  }
+  .stage {
+    display: none;
+  }
+  .dock {
+    height: auto;
+    overflow: visible;
+    box-shadow: none;
+  }
 }
 
 /* ---------- top bar ---------- */
@@ -91,13 +185,7 @@ body {
   color: rgba(255, 255, 255, 0.85);
 }
 
-/* ---------- layout ---------- */
-main {
-  padding: 14px 14px 20px;
-  display: grid;
-  gap: 12px;
-}
-
+/* ---------- cards & sections ---------- */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -111,6 +199,43 @@ main {
   text-transform: uppercase;
   color: var(--midnight-80);
   margin: 2px 0 8px;
+}
+
+/* ---------- home / idle ---------- */
+.hero {
+  padding: 18px 4px 6px;
+}
+.hero h2 {
+  font: 300 21px/1.25 var(--serif);
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+}
+.hero p {
+  margin: 0 0 12px;
+  color: var(--midnight-80);
+  font-size: 12.5px;
+}
+.hero .note {
+  margin: 10px 0 0;
+  font: 11px var(--mono);
+  color: var(--slate);
+}
+.samples {
+  flex-wrap: wrap;
+}
+
+.card--ghost {
+  border-style: dashed;
+  background: transparent;
+}
+.bar {
+  height: 9px;
+  border-radius: 5px;
+  background: var(--wash);
+  align-self: center;
+}
+.row--ghost {
+  align-items: center;
 }
 
 /* ---------- candidates ---------- */
@@ -176,6 +301,7 @@ main {
   margin-top: 10px;
 }
 
+/* ---------- buttons & inputs ---------- */
 .btn {
   font: 600 13px/1 var(--sans);
   border: 0;
@@ -188,8 +314,29 @@ main {
 .btn:hover {
   background: #173b43;
 }
+.btn--lime {
+  background: var(--lime);
+  color: var(--midnight);
+}
+.btn--lime:hover {
+  background: #b8ff4a;
+}
+.btn--ghost {
+  background: var(--surface);
+  color: var(--midnight);
+  border: 1px solid var(--border);
+  font-weight: 500;
+  font-size: 12px;
+  padding: 8px 12px;
+}
+.btn--ghost:hover {
+  background: var(--wash);
+}
+
 .btn:focus-visible,
+.devlink:focus-visible,
 .candidate:focus-visible,
+.change:focus-visible,
 a:focus-visible {
   outline: 2px solid var(--midnight);
   outline-offset: 2px;
@@ -197,6 +344,7 @@ a:focus-visible {
 
 .search {
   flex: 1;
+  min-width: 0;
   font: 13px var(--sans);
   padding: 8px 12px;
   border: 1px solid var(--border);
@@ -339,30 +487,8 @@ a:focus-visible {
 .locked-block p b {
   color: #fff;
 }
-.btn--lime {
-  background: var(--lime);
-  color: var(--midnight);
-}
-.btn--lime:hover {
-  background: #b8ff4a;
-}
-.btn--ghost {
-  background: var(--surface);
-  color: var(--midnight);
-  border: 1px solid var(--border);
-  font-weight: 500;
-  font-size: 12px;
-  padding: 8px 12px;
-}
-.btn--ghost:hover {
-  background: var(--snow);
-}
-.idle .confirm-row {
-  justify-content: center;
-  flex-wrap: wrap;
-}
 
-/* ---------- states ---------- */
+/* ---------- loading ---------- */
 .skeleton {
   height: 12px;
   border-radius: 6px;
@@ -387,29 +513,26 @@ a:focus-visible {
   color: var(--midnight-80);
 }
 
-.idle {
-  text-align: center;
-  padding: 28px 18px;
-  color: var(--midnight-80);
-  font-size: 13px;
-}
-
 /* ---------- footer ---------- */
 .disclaimer {
   font-size: 11px;
   color: var(--slate);
   line-height: 1.5;
-  padding: 0 4px;
+  margin: 0;
 }
 
 .devstrip {
   display: flex;
   gap: 12px;
   justify-content: center;
-  font: 11px var(--mono);
-  padding: 8px;
-  color: var(--slate);
+  padding-top: 10px;
 }
-.devstrip a {
+.devlink {
+  font: 11px var(--mono);
   color: var(--midnight-80);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline dotted;
 }
