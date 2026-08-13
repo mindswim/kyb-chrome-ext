@@ -1,7 +1,7 @@
 import './browser.css';
 import './site.css';
 import { h } from '../lib/dom';
-import { fadeScrollbars } from '../lib/scroll-fade';
+import { overlayScrollbar } from '../lib/overlay-scrollbar';
 import { icon } from './icons';
 import { renderSite, SITES, type SiteSpec } from './sites';
 
@@ -73,7 +73,7 @@ function panelTargetOf(view: TabView): string {
 function mountPanel(businessId: string): void {
   const frame = document.createElement('iframe');
   frame.className = 'panel-frame';
-  frame.title = 'Middesk Check';
+  frame.title = 'KYB Check';
   frame.src = `sidepanel.html?business=${businessId}`;
   dock.replaceChildren(frame);
 }
@@ -222,7 +222,7 @@ function toolbar(): HTMLElement {
 
   const puzzle = h('button', 'icon-btn');
   puzzle.append(icon('extensions', 17));
-  pin.title = 'Middesk Check';
+  pin.title = 'KYB Check';
   pin.addEventListener('click', togglePanel);
   const more = h('button', 'icon-btn');
   more.append(icon('more', 17));
@@ -250,7 +250,7 @@ function boot(): void {
   const browser = document.getElementById('browser')!;
   browser.classList.add('panel-open');
   browser.append(tabstrip, toolbar(), bookmarksBar(), h('div', 'browser-body', [siteRegion, dock]));
-  fadeScrollbars(siteRegion);
+  overlayScrollbar(siteRegion);
   render();
 }
 

@@ -1,7 +1,8 @@
 {
-  "name": "middesk-check",
+  "name": "kyb-chrome-ext",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "Concept demo: a Chrome side-panel that shows a public-record snapshot of the business behind the site you're on, in Middesk's design language.",
   "scripts": {

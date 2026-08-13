@@ -35,29 +35,29 @@ body {
   font: 14px/1.5 var(--sans);
 }
 
-/* Minimal scrollbars, visible only while scrolling (see lib/scroll-fade.ts).
-   Chrome honors these in extension pages and the side panel as on the web. */
+/* Native scrollbars are hidden outright; lib/overlay-scrollbar.ts renders a
+   floating pill that appears only while scrolling. Chrome honors this in
+   extension pages and the side panel as on the web. */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
+  scrollbar-width: none;
 }
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  display: none;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+.osb-thumb {
+  position: absolute;
+  top: 0;
+  right: 3px;
+  width: 5px;
+  border-radius: 999px;
+  background: rgba(11, 49, 57, 0.32);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+  z-index: 40;
 }
-::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 4px;
-}
-html.is-scrolling {
-  scrollbar-color: rgba(11, 49, 57, 0.22) transparent;
-}
-html.is-scrolling::-webkit-scrollbar-thumb,
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(11, 49, 57, 0.24);
+.osb-thumb.is-visible {
+  opacity: 1;
 }
 
 /* ---------- the panel column ---------- */

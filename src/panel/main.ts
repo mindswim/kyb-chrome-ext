@@ -10,7 +10,7 @@ import {
 import { summarize } from '../core/summarize';
 import type { BusinessProfile, ProfileRow, SectionId } from '../core/types';
 import { h } from '../lib/dom';
-import { fadeScrollbars } from '../lib/scroll-fade';
+import { overlayScrollbar } from '../lib/overlay-scrollbar';
 import harbor from '../fixtures/harbor.json';
 import middeskApi from '../fixtures/middesk-api.json';
 import nimbus from '../fixtures/nimbus.json';
@@ -40,7 +40,7 @@ const SECTION_TITLES: Record<SectionId, string> = {
 };
 
 function topbar(): HTMLElement {
-  return h('header', 'topbar', [h('span', 'logo'), h('h1', undefined, ['Middesk Check'])]);
+  return h('header', 'topbar', [h('span', 'logo'), h('h1', undefined, ['KYB Check'])]);
 }
 
 // One row grammar everywhere, matching their report's label-over-value groups.
@@ -161,7 +161,7 @@ function ctaCard(): HTMLElement {
   // Attributed link-out rather than an in-panel form: their contact page owns
   // routing and consent, and the UTM makes the extension a measurable channel.
   a.href =
-    'https://www.middesk.com/contact?utm_source=middesk-check&utm_medium=extension&utm_campaign=concept-demo';
+    'https://www.middesk.com/contact?utm_source=kyb-check&utm_medium=extension&utm_campaign=concept-demo';
   a.target = '_blank';
   a.rel = 'noopener';
   card.append(a);
@@ -250,8 +250,8 @@ async function resolveBusiness(): Promise<MiddeskBusiness | null> {
   }
   const access = await loadAccess();
   if (access) {
-    // In the live product the query comes from page extraction (Phase 3);
-    // until then the fixture's identity doubles as the query.
+    // In the live extension the query comes from page extraction; until
+    // then the fixture's identity doubles as the query.
     return resolveMiddeskBusiness(
       { name: fixture.name, domain: fixture.website?.url?.replace(/^https?:\/\//, '') },
       access,
@@ -297,7 +297,7 @@ function boot(): void {
       h('section', 'card', [
         h('div', 'section-label', ['What this checks']),
         h('p', 'errmsg', [
-          'Middesk Check verifies business websites — merchants, vendors, borrowers, and other ' +
+          'KYB Check verifies business websites — merchants, vendors, borrowers, and other ' +
             'counterparties. Personal sites, docs, and internal tools have nothing to verify.',
         ]),
       ]),
@@ -357,7 +357,7 @@ function boot(): void {
   };
 
   app.append(column);
-  fadeScrollbars(document.documentElement, window);
+  overlayScrollbar(window);
   showIdle();
 }
 

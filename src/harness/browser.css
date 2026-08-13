@@ -18,28 +18,28 @@ body {
   color: #202124;
 }
 
-/* Minimal scrollbars, visible only while scrolling (see lib/scroll-fade.ts). */
+/* Native scrollbars are hidden outright; lib/overlay-scrollbar.ts renders a
+   floating pill that appears only while scrolling. */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
+  scrollbar-width: none;
 }
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  display: none;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+.osb-thumb {
+  position: absolute;
+  top: 0;
+  right: 3px;
+  width: 5px;
+  border-radius: 999px;
+  background: rgba(60, 64, 67, 0.38);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+  z-index: 40;
 }
-::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 4px;
-}
-.is-scrolling {
-  scrollbar-color: rgba(60, 64, 67, 0.3) transparent;
-}
-.is-scrolling::-webkit-scrollbar-thumb,
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(60, 64, 67, 0.3);
+.osb-thumb.is-visible {
+  opacity: 1;
 }
 
 #browser {
@@ -219,7 +219,7 @@ body {
   gap: 4px;
 }
 
-/* the pinned Middesk Check icon — the demo's front door */
+/* the pinned KYB Check icon — the demo's front door */
 .mdk-pin {
   width: 26px;
   height: 26px;
