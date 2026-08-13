@@ -189,14 +189,48 @@ function lockedBlock(): HTMLElement {
   return block;
 }
 
+/** Their agents' verification steps, cycled by the toast while "working". */
+const AGENT_STEPS = [
+  'Searching Secretary of State records…',
+  'Verifying TIN with the IRS…',
+  'Screening OFAC and watchlists…',
+  'Analyzing web presence…',
+];
+
+function agentToast(): HTMLElement {
+  const label = h('span', 'toast-label', [AGENT_STEPS[0] ?? '']);
+  const clock = h('span', 'toast-clock', ['0:00']);
+  const toast = h('section', 'toast', [
+    h('div', 'toast-top', [h('span', 'toast-mark'), label, clock]),
+    h('div', 'toast-bar', [h('i')]),
+  ]);
+  let seconds = 0;
+  let step = 0;
+  // Self-cleaning: the interval dies with the element, so views can swap
+  // freely without tracking timers.
+  const tick = setInterval(() => {
+    if (!toast.isConnected) {
+      clearInterval(tick);
+      return;
+    }
+    seconds += 1;
+    clock.textContent = `0:${String(seconds % 60).padStart(2, '0')}`;
+    if (seconds % 2 === 0) {
+      step = (step + 1) % AGENT_STEPS.length;
+      label.textContent = AGENT_STEPS[step] ?? '';
+    }
+  }, 1000);
+  return toast;
+}
+
 function loadingView(): HTMLElement[] {
-  const card = h('section', 'card', [h('div', 'searching', ['Searching authoritative sources…'])]);
+  const bones = h('section', 'card');
   for (let i = 0; i < 4; i++) {
     const bone = h('div', 'skeleton');
     bone.style.width = `${85 - i * 12}%`;
-    card.append(bone);
+    bones.append(bone);
   }
-  return [card];
+  return [agentToast(), bones];
 }
 
 /** Ghosted preview of the report shape — the "empty" state teaches the output. */
@@ -281,9 +315,9 @@ function idleView(ctl: Controller): HTMLElement[] {
   ]);
   const verify = h('button', 'btn', ['Verify this business']);
   verify.addEventListener('click', () => {
-    // Brief searching state before the report, mirroring their async flow.
+    // Long enough for the agent toast to play a couple of steps.
     ctl.showLoading();
-    setTimeout(() => ctl.showMiddeskSample(), 900);
+    setTimeout(() => ctl.showMiddeskSample(), 2600);
   });
   hero.append(h('div', 'confirm-row samples', [verify]));
   return [hero, ...ghostPreview()];

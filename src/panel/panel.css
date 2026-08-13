@@ -635,9 +635,80 @@ a:focus-visible {
   }
 }
 
-.searching {
-  font: 12px var(--mono);
-  color: var(--midnight-80);
+/* agent toast — their monospace progress idiom, dark card + lime bar */
+.toast {
+  background: var(--midnight);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.toast-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.toast-mark {
+  width: 14px;
+  height: 14px;
+  position: relative;
+  flex: none;
+}
+.toast-mark::before,
+.toast-mark::after {
+  content: '';
+  position: absolute;
+  width: 2.5px;
+  height: 9px;
+  background: #8fa3a8;
+  border-radius: 2px;
+  transform: rotate(35deg);
+}
+.toast-mark::before {
+  left: 4px;
+  top: 2px;
+}
+.toast-mark::after {
+  left: 9px;
+  top: 2px;
+  height: 7px;
+}
+.toast-label {
+  flex: 1;
+  font: 12.5px var(--mono);
+  color: #d7e2db;
+  letter-spacing: 0.02em;
+}
+.toast-clock {
+  font: 12.5px var(--mono);
+  color: #8fa3a8;
+  font-variant-numeric: tabular-nums;
+}
+.toast-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.14);
+  margin-top: 12px;
+  overflow: hidden;
+}
+.toast-bar i {
+  display: block;
+  height: 100%;
+  background: var(--lime);
+  border-radius: 3px;
+  animation: toastfill 2s linear infinite;
+}
+@keyframes toastfill {
+  from {
+    width: 4%;
+  }
+  to {
+    width: 96%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-bar i {
+    animation: none;
+    width: 60%;
+  }
 }
 
 /* ---------- footer ---------- */
