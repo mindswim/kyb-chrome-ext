@@ -146,33 +146,38 @@ function ctaCard(): HTMLElement {
   return card;
 }
 
-function loadingView(): HTMLElement[] {
-  const toast = h('section', 'toast', [
+function toast(): HTMLElement {
+  return h('section', 'toast enter', [
     h('div', 'toast-top', [
       h('span', 'toast-mark'),
       h('span', 'toast-label', ['Verifying against authoritative sources…']),
     ]),
     h('div', 'toast-bar', [h('i')]),
   ]);
-  const bones = h('section', 'card');
-  for (let i = 0; i < 4; i++) {
-    const bone = h('div', 'skeleton');
-    bone.style.width = `${85 - i * 12}%`;
-    bones.append(bone);
-  }
-  return [toast, bones];
 }
 
-/** Ghosted preview of the report shape — the empty state teaches the output. */
-function ghostPreview(): HTMLElement[] {
-  const widths: Record<SectionId, number[]> = {
-    registration: [120, 88, 104],
-    federal: [96, 128],
-    web: [110, 80],
-  };
-  return (Object.keys(widths) as SectionId[]).map((s) => {
-    const card = h('section', 'card card--ghost', [h('div', 'section-label', [SECTION_TITLES[s]])]);
-    for (const w of widths[s]) {
+/**
+ * Ghost of the real report, section for section — the empty state previews
+ * the exact output shape, and the verify flow fills it in place.
+ */
+function ghostReport(): HTMLElement[] {
+  const snapshot = h('section', 'card card--ghost', [h('div', 'section-label', ['Snapshot'])]);
+  for (const w of ['92%', '64%']) {
+    const bar = h('div', 'bar');
+    bar.style.width = w;
+    bar.style.marginTop = '6px';
+    snapshot.append(bar);
+  }
+
+  const sections: { title: string; rows: number[] }[] = [
+    { title: 'Verification', rows: [120, 96, 88, 104] },
+    { title: 'Fraud intelligence', rows: [72, 60, 68] },
+    { title: 'Registration', rows: [120, 88, 104] },
+    { title: 'Web', rows: [110, 80] },
+  ];
+  const cards = sections.map(({ title, rows }) => {
+    const card = h('section', 'card card--ghost', [h('div', 'section-label', [title])]);
+    for (const w of rows) {
       const label = h('span', 'bar');
       label.style.width = '56px';
       const value = h('span', 'bar');
@@ -186,6 +191,8 @@ function ghostPreview(): HTMLElement[] {
     }
     return card;
   });
+
+  return [snapshot, ...cards];
 }
 
 function idleView(onVerify: () => void): HTMLElement[] {
@@ -198,7 +205,7 @@ function idleView(onVerify: () => void): HTMLElement[] {
   const verify = h('button', 'btn', ['Verify this business']);
   verify.addEventListener('click', onVerify);
   hero.append(h('div', 'hero-actions', [verify]));
-  return [hero, ...ghostPreview()];
+  return [hero, ...ghostReport()];
 }
 
 /** The simulated webpage behind the dock, so the harness reads as a side panel. */
@@ -223,8 +230,24 @@ function boot(): void {
   const business = middeskApi.business as unknown as MiddeskBusiness;
   const profile = profileFromMiddesk(business);
 
+  // Staggered entrance keeps view changes from feeling like a hard swap.
+  const enter = (): void => {
+    Array.from(main.children).forEach((el, i) => {
+      (el as HTMLElement).classList.add('enter');
+      (el as HTMLElement).style.animationDelay = `${i * 45}ms`;
+    });
+  };
+
+  const scrollTop = (): void => {
+    const dock = document.querySelector('.dock');
+    if (dock) dock.scrollTop = 0;
+    else window.scrollTo(0, 0);
+  };
+
   const showIdle = (): void => {
     main.replaceChildren(...idleView(verifyFlow));
+    enter();
+    scrollTop();
   };
 
   const showReport = (): void => {
@@ -243,12 +266,17 @@ function boot(): void {
       ...aboutCard(profile),
       ctaCard(),
     );
-    main.scrollTop = 0;
+    enter();
+    scrollTop();
   };
 
+  // Verification happens inside the first view: the hero becomes the toast
+  // and the ghost report the user is already looking at starts shimmering,
+  // then resolves into the real one.
   const verifyFlow = (): void => {
-    main.replaceChildren(...loadingView());
-    setTimeout(showReport, 1400);
+    main.querySelector('.hero')?.replaceWith(toast());
+    main.querySelectorAll('.card--ghost .bar').forEach((b) => b.classList.add('bar--live'));
+    setTimeout(showReport, 1600);
   };
 
   if (IS_EXTENSION) {
