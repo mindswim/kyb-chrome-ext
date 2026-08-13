@@ -56,7 +56,12 @@ export interface MiddeskBusiness {
       naics_codes?: string[];
     }[];
   } | null;
-  website?: { url?: string; status?: string; domain?: { creation_date?: string } } | null;
+  website?: {
+    url?: string;
+    status?: string;
+    description?: string;
+    domain?: { creation_date?: string };
+  } | null;
   addresses?: { full_address?: string; city?: string; state?: string }[];
   /** Subset of their risk-assessment shape (0–100, banded low/moderate/high). */
   risk_assessment?: {
@@ -245,6 +250,7 @@ export function profileFromMiddesk(b: MiddeskBusiness): BusinessProfile {
     name: b.name,
     domain: b.website?.url?.replace(/^https?:\/\//, ''),
     location: addr ? [addr.city, addr.state].filter(Boolean).join(', ') : undefined,
+    about: b.website?.description,
     rows: rowsFromMiddesk(b),
     fetchedAt: new Date().toISOString(),
   };

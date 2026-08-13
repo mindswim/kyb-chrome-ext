@@ -1,24 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import { summarize } from './summarize';
-import paseo from '../fixtures/paseo.json';
-import thin from '../fixtures/thin.json';
+import { profileFromMiddesk, type MiddeskBusiness } from '../adapters/middesk';
+import api from '../fixtures/middesk-api.json';
 import type { ProfileRow } from './types';
 
-const rows = (f: { profile: { rows: unknown } }) => f.profile.rows as ProfileRow[];
-
 describe('summarize', () => {
-  it('leads with active registrations and includes checks for a healthy profile', () => {
-    const s = summarize(rows(paseo));
-    expect(s).toContain('Active in Colorado');
-    expect(s).toContain('SEC: Form D · 2021');
-    expect(s).toContain('no sanctions hits');
-    expect(s).toContain('domain registered 2014');
+  it('headlines the full API-schema report', () => {
+    const rows = profileFromMiddesk(api.business as unknown as MiddeskBusiness).rows;
+    const s = summarize(rows);
+    expect(s).toContain('Active in WA, CO, DE');
+    expect(s).toContain('2 listed officer(s)');
+    expect(s).toContain('TIN verified');
+    expect(s).toContain('no watchlist hits');
   });
 
-  it('states the absence and surfaces the flag for a thin profile', () => {
-    const s = summarize(rows(thin));
-    expect(s).toContain('No registrations found in covered states');
-    expect(s).toContain('no SEC filings');
-    expect(s).toContain('flagged: registered 6 weeks ago');
+  it('surfaces failures instead of hiding them', () => {
+    const rows: ProfileRow[] = [
+      { section: 'registration', label: 'CO', value: 'inactive', status: 'warning' },
+      { section: 'federal', label: 'TIN Match', value: 'Not found', status: 'failure' },
+      { section: 'federal', label: 'Watchlists', value: '2 hit(s)', status: 'failure' },
+    ];
+    const s = summarize(rows);
+    expect(s).toContain('TIN: not found');
+    expect(s).toContain('watchlists: 2 hit(s)');
+    expect(s).not.toContain('Active in');
   });
 });

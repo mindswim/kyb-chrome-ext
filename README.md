@@ -6,11 +6,11 @@ A Chrome side-panel that answers *"is this company real?"* without leaving the p
 
 ## Status
 
-- [x] **Phase 1 — UI shell.** Side panel + fixture harness, full design-token treatment, all row states (success / warning / failure / neutral / locked), ambiguity-gated confirm, loading & empty states.
+- [x] **Phase 1 — UI shell.** Side panel + dock harness, full design-token treatment, loading & empty states.
 - [x] **Phase 1.5 — Middesk-schema ingestion path.** `fixtures/middesk-api.json` is a Business response in their documented schema, rendered through the same `rowsFromMiddesk()` mapper the live fetch uses; `fetchMiddeskBusiness()` is implemented and dormant behind a key.
-- [ ] **Phase 2 — product-fidelity widgets.** Clone the widgets visible in their own product imagery (`reference/`, gitignored): SoS stat tiles, Insights grammar, Signal-style score, Business-Connections teaser.
+- [x] **Phase 2 — product-fidelity pass.** Their report grammar throughout: verification stack with match verdicts, lifecycle status pill, Fraud-intelligence tally, verifying toast, app-density type scale; scope pinned to core verification with a click-out CTA for the full platform.
 - [ ] **Phase 2.5 — hosted web demo.** The panel is a plain web page, so the same build deploys as a zero-install demo link.
-- [ ] **Phase 3 — optional live public-record adapters.** The public-launch path from the GTM proposal (EDGAR, state open data, OFAC/CSL, FinCEN MSB, GLEIF, RDAP + a small Worker); not required for the interview demo.
+- [ ] **Phase 3 — optional live public-record adapters.** The public-launch path from the GTM proposal (EDGAR, state open data, OFAC/CSL, FinCEN MSB, GLEIF, RDAP + a small Worker), plus the page-extraction + candidate-confirm flow; not required for the interview demo.
 
 ## Run it
 
@@ -19,7 +19,7 @@ npm install
 npm run dev          # then open http://localhost:5173/sidepanel.html?fixture=paseo
 ```
 
-Harness states: `?fixture=paseo` (healthy card), `?fixture=thin` (the honest Delaware-wall case), `?fixture=paseo&state=loading`.
+The dock harness simulates Chrome's side panel next to a mock webpage; click **Verify this business** to play the flow (verifying toast → full report).
 
 **As the real side panel:** `npm run build`, then chrome://extensions → enable Developer mode → Load unpacked → select `dist/` → click the Middesk Check toolbar icon on any tab. The panel opens with sample-data buttons until Phase 2 wires live sources. After code changes: rebuild, then hit ↻ on the extension card.
 
@@ -46,7 +46,7 @@ Design decisions worth stating:
 
 - **`adapters/middesk.ts` exists from day one, typed against Middesk's documented API shapes, deliberately inert.** The free-source fleet exists because Middesk's API is sales-gated; if a key is wired in, one `POST /v1/businesses` replaces all of it. The adapter interface is the pitch, in code.
 - **Status vocabulary mirrors Middesk's review tasks** (`success`/`warning`/`failure`) so their API maps in without renames.
-- **Entity confirmation is ambiguity-gated.** Domain→legal-entity resolution is genuinely hard (it's part of what Middesk sells). Past the conservative thresholds in `core/resolve.ts` the panel auto-confirms and says where the identification came from; anything murky gets the chooser, and "change entity" is always one click.
+- **Demo scope is one polished flow** — verify → report — pinned to core verification, with a click-out CTA for everything deeper (liens, connections, monitoring). The page-extraction and candidate-confirm flow from the GTM proposal returns with the live adapters in Phase 3 (its earlier implementation lives in git history).
 - **No LLM in the data path.** Parse → query → render. A row either cites a government source or shows a designed absence; the tool is hallucination-free by construction.
 - **Vanilla TypeScript, no framework.** A panel of list rows doesn't need React; reviewers can read the whole thing in one sitting.
 

@@ -68,6 +68,7 @@
     "website": {
       "url": "https://paseo.example",
       "status": "online",
+      "description": "Paseo Incorporated is a corporation based in Seattle, Washington that builds small-batch cold-brew equipment for cafés and specialty roasters.",
       "domain": { "creation_date": "2014-05-20" }
     },
     "addresses": [

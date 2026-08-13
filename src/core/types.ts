@@ -27,23 +27,11 @@ export interface ProfileRow {
   source?: SourceRef;
 }
 
-/** A possible legal entity behind the current page, before the user confirms. */
-export interface EntityCandidate {
-  name: string;
-  origin: 'jsonld' | 'footer' | 'tos' | 'title' | 'manual';
-  /**
-   * 0–1. Auto-confirm happens only past the conservative thresholds in
-   * core/resolve.ts; anything ambiguous goes to the chooser, and
-   * "change entity" stays one click away after an auto-confirm.
-   */
-  confidence: number;
-}
-
 export interface BusinessProfile {
   name: string;
   domain?: string;
   location?: string;
-  /** Site's own self-description (og/meta description) — attributed as such in the UI. */
+  /** Business description, e.g. from Middesk's web analysis. */
   about?: string;
   rows: ProfileRow[];
   fetchedAt: string;
