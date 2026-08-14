@@ -18,13 +18,26 @@ interface Bookmark {
   href: string;
   host: string;
   color: string;
+  ink: string;
 }
 
 /** Set dressing, and a small signature: the demo author's own sites. */
 const BOOKMARKS: Bookmark[] = [
-  { label: 'juan.so', href: 'https://juan.so', host: 'juan.so', color: '#0B3139' },
-  { label: 'os.juan.so', href: 'https://os.juan.so', host: 'os.juan.so', color: '#4B7D00' },
-  { label: 'Mindswim', href: 'https://mindswim.co', host: 'mindswim.co', color: '#7C5CFF' },
+  { label: 'juan.so', href: 'https://juan.so', host: 'juan.so', color: '#0B3139', ink: '#A7FF1C' },
+  {
+    label: 'os.juan.so',
+    href: 'https://os.juan.so',
+    host: 'os.juan.so',
+    color: '#4B7D00',
+    ink: '#FFFFFF',
+  },
+  {
+    label: 'Mindswim',
+    href: 'https://mindswim.co',
+    host: 'mindswim.co',
+    color: '#7C5CFF',
+    ink: '#FFFFFF',
+  },
 ];
 
 type TabView =
@@ -37,6 +50,8 @@ interface Tab {
   pinned?: boolean;
 }
 
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
+
 let nextId = 1;
 let tabs: Tab[] = SITES.map((site) => ({
   id: nextId++,
@@ -44,9 +59,11 @@ let tabs: Tab[] = SITES.map((site) => ({
   pinned: true,
 }));
 let activeId = tabs[0]!.id;
+/** Tab currently showing Chrome's favicon spinner during a navigation beat. */
+let loadingId: number | null = null;
 let panelOpen = true;
 
-const tabstrip = h('div', 'tabstrip', [h('div', 'traffic', [h('i'), h('i'), h('i')])]);
+const tabstrip = h('div', 'tabstrip');
 const siteRegion = h('div', 'site-region');
 const urlText = h('span', 'url-text');
 const dock = h('aside', 'panel-dock');
@@ -60,10 +77,18 @@ function titleOf(view: TabView): string {
   return 'New Tab';
 }
 
-function colorOf(view: TabView): string {
-  if (view.kind === 'business') return view.site.tabDot;
-  if (view.kind === 'bookmark') return view.bm.color;
-  return '#c4c7cc';
+function glyphOf(view: TabView): { letter: string; color: string; ink: string } {
+  if (view.kind === 'business') {
+    return { letter: view.site.brand.charAt(0), color: view.site.tabDot, ink: view.site.tabInk };
+  }
+  if (view.kind === 'bookmark') {
+    return {
+      letter: view.bm.label.charAt(0).toUpperCase(),
+      color: view.bm.color,
+      ink: view.bm.ink,
+    };
+  }
+  return { letter: '', color: '#e8eaed', ink: '#5f6368' };
 }
 
 function panelTargetOf(view: TabView): string {
@@ -81,22 +106,23 @@ function mountPanel(businessId: string): void {
 /** Chrome's new-tab shortcuts — and the way to reopen anything you closed. */
 function newTabPage(): HTMLElement {
   const grid = h('div', 'nt-shortcuts');
-  const entries: { label: string; color: string; go: () => void }[] = [
+  const entries: { label: string; glyph: ReturnType<typeof glyphOf>; go: () => void }[] = [
     ...SITES.map((site) => ({
       label: site.brand,
-      color: site.tabDot,
+      glyph: glyphOf({ kind: 'business', site } as TabView),
       go: () => focusBusiness(site),
     })),
     ...BOOKMARKS.map((bm) => ({
       label: bm.label,
-      color: bm.color,
+      glyph: glyphOf({ kind: 'bookmark', bm } as TabView),
       go: () => navigateHere({ kind: 'bookmark', bm }),
     })),
   ];
   for (const e of entries) {
     const tile = h('button', 'nt-tile');
-    const swatch = h('span', 'nt-swatch');
-    swatch.style.background = e.color;
+    const swatch = h('span', 'nt-swatch', [e.glyph.letter]);
+    swatch.style.background = e.glyph.color;
+    swatch.style.color = e.glyph.ink;
     tile.append(swatch, h('span', 'nt-label', [e.label]));
     tile.addEventListener('click', e.go);
     grid.append(tile);
@@ -123,18 +149,19 @@ function renderContent(view: TabView): void {
   siteRegion.scrollTop = 0;
 }
 
-function render(): void {
-  const tab = activeTab();
-  if (!tab) return;
-
+function renderTabs(): void {
   tabstrip.replaceChildren(h('div', 'traffic', [h('i'), h('i'), h('i')]));
   for (const t of tabs) {
-    const favicon = h('span', 'tab-favicon');
-    favicon.style.background = colorOf(t.view);
+    const glyph = glyphOf(t.view);
+    const favicon = h('span', 'tab-favicon', [glyph.letter]);
+    favicon.style.background = glyph.color;
+    favicon.style.color = glyph.ink;
+    if (t.id === loadingId) favicon.classList.add('is-loading');
     const el = h('button', `tab${t.id === activeId ? ' is-active' : ''}`, [
       favicon,
       h('span', 'tab-title', [titleOf(t.view)]),
     ]);
+    el.title = titleOf(t.view);
     if (!t.pinned) {
       const close = h('span', 'tab-close', [icon('close', 12)]);
       close.addEventListener('click', (e) => {
@@ -142,31 +169,62 @@ function render(): void {
         closeTab(t.id);
       });
       el.append(close);
+      el.addEventListener('auxclick', (e) => {
+        if (e.button === 1) closeTab(t.id);
+      });
     }
-    el.addEventListener('click', () => {
-      activeId = t.id;
-      render();
-    });
+    el.addEventListener('click', () => activate(t.id));
     tabstrip.append(el);
   }
   const add = h('button', 'icon-btn tab-new');
+  add.title = 'New tab';
   add.append(icon('add', 16));
   add.addEventListener('click', () => {
     tabs.push({ id: nextId++, view: { kind: 'newtab' } });
-    activeId = tabs[tabs.length - 1]!.id;
-    render();
+    activate(tabs[tabs.length - 1]!.id, true);
   });
   tabstrip.append(add);
+}
 
+function renderActive(): void {
+  const tab = activeTab();
+  if (!tab) return;
   renderContent(tab.view);
   if (panelOpen) mountPanel(panelTargetOf(tab.view));
 }
 
-/** Bookmarks always open a new focused tab, never displacing a business. */
+function render(): void {
+  renderTabs();
+  renderActive();
+}
+
+/**
+ * Chrome's navigation beat: the favicon becomes a spinner briefly before the
+ * page paints. Skipped under reduced motion — the swap is instant there.
+ */
+function load(): void {
+  if (REDUCED_MOTION.matches) {
+    loadingId = null;
+    render();
+    return;
+  }
+  loadingId = activeId;
+  renderTabs();
+  window.setTimeout(() => {
+    loadingId = null;
+    render();
+  }, 420);
+}
+
+function activate(id: number, force = false): void {
+  if (id === activeId && !force) return;
+  activeId = id;
+  load();
+}
+
 function openInNewTab(view: TabView): void {
   tabs.push({ id: nextId++, view });
-  activeId = tabs[tabs.length - 1]!.id;
-  render();
+  activate(tabs[tabs.length - 1]!.id, true);
 }
 
 /** New-tab shortcuts behave like Chrome's: they navigate the tab you are on. */
@@ -177,15 +235,14 @@ function navigateHere(view: TabView): void {
     return;
   }
   tab.view = view;
-  render();
+  load();
 }
 
 /** The businesses are always open, so their tiles focus rather than duplicate. */
 function focusBusiness(site: SiteSpec): void {
   const existing = tabs.find((t) => t.view.kind === 'business' && t.view.site.id === site.id);
   if (existing) {
-    activeId = existing.id;
-    render();
+    activate(existing.id);
     return;
   }
   openInNewTab({ kind: 'business', site });
@@ -209,16 +266,25 @@ function togglePanel(): void {
 }
 
 function toolbar(): HTMLElement {
-  const nav = h('div', 'nav-btns');
-  for (const name of ['back', 'forward', 'reload'] as const) {
-    const b = h('button', 'icon-btn');
-    b.append(icon(name, 18));
-    nav.append(b);
-  }
+  // Fresh tabs have no history, so back and forward render disabled — which
+  // is what real Chrome shows.
+  const back = h('button', 'icon-btn is-disabled');
+  back.append(icon('back', 18));
+  const forward = h('button', 'icon-btn is-disabled');
+  forward.append(icon('forward', 18));
+  const reload = h('button', 'icon-btn');
+  reload.title = 'Reload';
+  reload.append(icon('reload', 18));
+  reload.addEventListener('click', () => {
+    if (activeTab()) load();
+  });
 
   const lock = h('span', 'lock');
   lock.append(icon('lock', 13));
-  const urlbar = h('div', 'urlbar', [lock, urlText]);
+  const star = h('span', 'url-star');
+  star.append(icon('star', 15));
+  const urlbar = h('div', 'urlbar', [lock, urlText, star]);
+  urlbar.tabIndex = 0;
 
   const puzzle = h('button', 'icon-btn');
   puzzle.append(icon('extensions', 17));
@@ -228,7 +294,7 @@ function toolbar(): HTMLElement {
   more.append(icon('more', 17));
 
   return h('div', 'toolbar', [
-    nav,
+    h('div', 'nav-btns', [back, forward, reload]),
     urlbar,
     h('div', 'ext-area', [puzzle, pin, more, h('span', 'avatar')]),
   ]);
@@ -251,6 +317,14 @@ function boot(): void {
   browser.classList.add('panel-open');
   browser.append(tabstrip, toolbar(), bookmarksBar(), h('div', 'browser-body', [siteRegion, dock]));
   overlayScrollbar(siteRegion);
+
+  // The sticky site nav earns its shadow only once the page has scrolled.
+  siteRegion.addEventListener(
+    'scroll',
+    () => siteRegion.firstElementChild?.classList.toggle('is-scrolled', siteRegion.scrollTop > 8),
+    { passive: true },
+  );
+
   render();
 }
 

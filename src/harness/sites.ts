@@ -40,6 +40,8 @@ export interface SiteSpec {
   id: 'paseo' | 'harbor' | 'nimbus';
   tabTitle: string;
   tabDot: string;
+  /** Text color for the letter glyph drawn on tabDot (the favicon). */
+  tabInk: string;
   domain: string;
   brand: string;
   brandMark: 'wordmark' | 'block' | 'glyph';
@@ -56,6 +58,7 @@ export const SITES: SiteSpec[] = [
     id: 'paseo',
     tabTitle: 'Paseo — Cold Brew Systems',
     tabDot: '#B0703C',
+    tabInk: '#FFFDF9',
     domain: 'paseo.example',
     brand: 'Paseo',
     brandMark: 'wordmark',
@@ -155,6 +158,7 @@ export const SITES: SiteSpec[] = [
     id: 'harbor',
     tabTitle: 'Harbor Line Contracting',
     tabDot: '#F0B429',
+    tabInk: '#0F1C26',
     domain: 'harborlinecontracting.example',
     brand: 'Harbor Line',
     brandMark: 'block',
@@ -258,6 +262,7 @@ export const SITES: SiteSpec[] = [
     id: 'nimbus',
     tabTitle: 'Nimbus Refunds — Get your money back',
     tabDot: '#7C5CFF',
+    tabInk: '#FFFFFF',
     domain: 'nimbusrefunds.example',
     brand: 'Nimbus',
     brandMark: 'glyph',
@@ -353,7 +358,9 @@ export const SITES: SiteSpec[] = [
 ];
 
 function media(className: string): HTMLElement {
-  return h('div', className);
+  // Every media panel carries a grain layer — flat gradients read as
+  // placeholders; noise reads as photography.
+  return h('div', className, [h('div', 's-grain')]);
 }
 
 /**
@@ -418,7 +425,11 @@ function renderSection(s: Section): HTMLElement {
     case 'logos': {
       const strip = h('div', 's-logos', [h('span', 's-logos-label', [s.label])]);
       const row = h('div', 's-logos-row');
-      for (const n of s.names) row.append(h('span', 's-logo', [n]));
+      // Real logo walls mix marks; five names in one face reads as filler.
+      const treatments = ['s-logo--serif', 's-logo--wide', 's-logo--mono', 's-logo--dot', ''];
+      s.names.forEach((n, i) => {
+        row.append(h('span', `s-logo ${treatments[i % treatments.length]}`.trim(), [n]));
+      });
       strip.append(row);
       return strip;
     }
@@ -502,5 +513,70 @@ export function renderSite(site: SiteSpec): HTMLElement {
   const footer = h('footer', 's-footer', [cols, h('p', 's-legal', [site.footerLegal])]);
 
   root.append(nav, main, footer);
+  wireInteractions(root, main, links);
   return root;
+}
+
+/**
+ * Nothing on a believable page is a dead click: nav links and CTAs scroll to
+ * a sensible section, and sections reveal once as they enter the viewport.
+ * Both effects collapse to instant under reduced motion.
+ */
+function wireInteractions(root: HTMLElement, main: HTMLElement, links: Element): void {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const sections = [...main.children].filter((el) => !el.classList.contains('s-hero'));
+  // Native smooth scrolling misbehaves in this nested scroller (Chromium
+  // animates it near-zero px per frame), so the ease is driven by hand.
+  const go = (el: Element | undefined): void => {
+    if (!el) return;
+    const scroller = root.parentElement;
+    if (!scroller) return;
+    const navHeight = (root.querySelector('.s-nav') as HTMLElement | null)?.offsetHeight ?? 72;
+    const target = Math.max((el as HTMLElement).offsetTop - navHeight - 10, 0);
+    if (reduced) {
+      scroller.scrollTop = target;
+      return;
+    }
+    const start = scroller.scrollTop;
+    const distance = target - start;
+    const startedAt = performance.now();
+    const duration = 480;
+    const ease = (t: number): number => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+    const step = (now: number): void => {
+      const progress = Math.min((now - startedAt) / duration, 1);
+      scroller.scrollTop = start + distance * ease(progress);
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+
+  [...links.children].forEach((a, i) => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      go(sections[i % Math.max(sections.length, 1)]);
+    });
+  });
+  root.querySelectorAll('.s-navcta, .s-cta').forEach((b) => {
+    b.addEventListener('click', () => go(sections[sections.length - 1]));
+  });
+  root.querySelectorAll('.s-cta-ghost').forEach((b) => {
+    b.addEventListener('click', () => go(sections[0]));
+  });
+
+  if (reduced) return;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-revealed');
+          observer.unobserve(entry.target);
+        }
+      }
+    },
+    { threshold: 0.12 },
+  );
+  for (const el of sections) {
+    el.classList.add('s-reveal');
+    observer.observe(el);
+  }
 }

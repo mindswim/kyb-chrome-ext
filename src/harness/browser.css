@@ -63,6 +63,10 @@ body {
 .icon-btn:hover {
   background: rgba(60, 64, 67, 0.08);
 }
+.icon-btn.is-disabled {
+  color: #bdc1c6;
+  pointer-events: none;
+}
 
 /* ---------- tab strip ---------- */
 .tabstrip {
@@ -97,7 +101,8 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 240px;
+  flex: 0 1 240px;
+  min-width: 96px;
   height: 34px;
   padding: 0 8px 0 12px;
   border: 0;
@@ -145,10 +150,29 @@ body {
   background: rgba(60, 64, 67, 0.24);
 }
 .tab-favicon {
-  width: 14px;
-  height: 14px;
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
   border-radius: 4px;
   flex: none;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+/* Chrome swaps the favicon for a spinner while a page loads. */
+.tab-favicon.is-loading {
+  color: transparent !important;
+  background: transparent !important;
+  border: 2px solid #dadce0;
+  border-top-color: #1a73e8;
+  border-radius: 50%;
+  animation: tabspin 0.8s linear infinite;
+}
+@keyframes tabspin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 .tab-title {
   flex: 1;
@@ -164,6 +188,11 @@ body {
   height: 18px;
   border-radius: 50%;
   color: #5f6368;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.tab.is-active .tab-close,
+.tab:hover .tab-close {
   opacity: 0.75;
 }
 .tab-close:hover {
@@ -200,6 +229,25 @@ body {
 }
 .urlbar:hover {
   background: #eceff1;
+}
+.urlbar {
+  cursor: text;
+}
+.urlbar:focus,
+.urlbar:focus-visible {
+  outline: none;
+  background: #fff;
+  box-shadow:
+    0 1px 6px rgba(32, 33, 36, 0.18),
+    0 0 0 1px #dadce0;
+}
+.url-star {
+  display: grid;
+  place-items: center;
+  margin-left: auto;
+  color: #5f6368;
+  flex: none;
+  opacity: 0.85;
 }
 .lock {
   display: grid;
