@@ -804,3 +804,49 @@
   opacity: 1;
   transform: none;
 }
+
+/* ---------- cta confirmation ---------- */
+.s-ctadone {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  animation: ctadone 0.35s ease both;
+}
+.s-ctadone h2 {
+  margin: 0 0 4px;
+  font-family: var(--s-display);
+  font-weight: var(--s-display-weight);
+  text-transform: var(--s-case);
+  letter-spacing: var(--s-track);
+  font-size: clamp(20px, 2.4vw, 26px);
+}
+.s-check {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--s-accent);
+  position: relative;
+}
+.s-check::after {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 12px;
+  width: 12px;
+  height: 19px;
+  border: solid var(--s-accent-ink);
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+@keyframes ctadone {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .s-ctadone {
+    animation: none;
+  }
+}

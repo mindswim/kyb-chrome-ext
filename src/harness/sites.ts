@@ -34,7 +34,14 @@ type Section =
     }
   | { kind: 'features'; eyebrow: string; title: string; items: { title: string; body: string }[] }
   | { kind: 'quote'; text: string; who: string; role: string }
-  | { kind: 'cta'; title: string; body: string; button: string };
+  | {
+      kind: 'cta';
+      title: string;
+      body: string;
+      button: string;
+      doneTitle: string;
+      doneBody: string;
+    };
 
 export interface SiteSpec {
   id: 'paseo' | 'harbor' | 'nimbus';
@@ -146,6 +153,14 @@ export const SITES: SiteSpec[] = [
           ['2014', 'founded in Seattle'],
         ],
       },
+      {
+        kind: 'cta',
+        title: 'Outfit your café.',
+        body: 'Tell us about your space and volume and we will spec a system with a quote within two business days.',
+        button: 'Request a quote',
+        doneTitle: 'Request received.',
+        doneBody: 'We reply within two business days, from the workshop.',
+      },
     ],
     footerCols: [
       { title: 'Equipment', links: ['Tower Series', 'Keg systems', 'Accessories', 'Parts'] },
@@ -248,6 +263,8 @@ export const SITES: SiteSpec[] = [
         title: 'Have a project on the water?',
         body: 'Send drawings or a scope and we will return a preliminary number within five business days.',
         button: 'Request a bid',
+        doneTitle: 'Bid request received.',
+        doneBody: 'Drawings in hand, we return preliminary numbers within five business days.',
       },
     ],
     footerCols: [
@@ -345,6 +362,8 @@ export const SITES: SiteSpec[] = [
         title: 'Still holding a charge nobody will refund?',
         body: 'Start a claim in under four minutes. Flat $49 filing fee, refundable if we recover nothing.*',
         button: 'Start a claim — $49',
+        doneTitle: 'Claim started.',
+        doneBody: 'Check your email to finish filing. Average payout in 48 hours.*',
       },
     ],
     footerCols: [
@@ -478,11 +497,23 @@ function renderSection(s: Section): HTMLElement {
         ]),
       ]);
     }
-    case 'cta':
-      return h('section', 's-ctaband', [
+    case 'cta': {
+      const band = h('section', 's-ctaband', [
         h('div', undefined, [h('h2', undefined, [s.title]), h('p', 's-sub', [s.body])]),
-        h('button', 's-cta', [s.button]),
       ]);
+      const button = h('button', 's-cta', [s.button]);
+      // The one interaction a landing page must honor: submitting the CTA.
+      button.addEventListener('click', () => {
+        band.replaceChildren(
+          h('div', 's-ctadone', [
+            h('span', 's-check'),
+            h('div', undefined, [h('h2', undefined, [s.doneTitle]), h('p', 's-sub', [s.doneBody])]),
+          ]),
+        );
+      });
+      band.append(button);
+      return band;
+    }
   }
 }
 
@@ -556,8 +587,14 @@ function wireInteractions(root: HTMLElement, main: HTMLElement, links: Element):
       go(sections[i % Math.max(sections.length, 1)]);
     });
   });
-  root.querySelectorAll('.s-navcta, .s-cta').forEach((b) => {
+  root.querySelectorAll('.s-navcta, .s-hero .s-cta').forEach((b) => {
     b.addEventListener('click', () => go(sections[sections.length - 1]));
+  });
+  [...root.querySelectorAll('.s-footer-col a')].forEach((a, i) => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      go(sections[i % Math.max(sections.length, 1)]);
+    });
   });
   root.querySelectorAll('.s-cta-ghost').forEach((b) => {
     b.addEventListener('click', () => go(sections[0]));
